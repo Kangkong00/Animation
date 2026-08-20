@@ -25,5 +25,7 @@
   "fade_out_sec": 2.0,
   "motion_quality": "max",
   "workers": 0,
-  "image_naming": "strict"
+  "image_naming": "strict",
+  "bgm_duck": "medium",
+  "sfx_volume": 0.6
 }

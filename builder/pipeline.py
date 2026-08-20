@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from . import audio as audio_mod
 from . import config as config_mod
 from . import script as script_mod
 from . import fonts, tts, video
@@ -31,6 +32,11 @@ class Paths:
         return self.out / "clips"
 
     @property
+    def assets(self) -> Path:
+        """배경음악·효과음이 놓이는 곳. 이미지 폴더의 부모."""
+        return self.images.parent
+
+    @property
     def work(self) -> Path:
         return self.root / "work"
 
@@ -48,6 +54,8 @@ class Result:
     elapsed_sec: float = 0.0
     cuts: list[script_mod.Cut] = field(default_factory=list)
     title: str = ""
+    bgm: Path | None = None
+    sfx_count: int = 0
 
 
 def _noop(**kwargs):
@@ -105,10 +113,16 @@ def build(paths: Paths, engine: str = "edge", on_event=_noop,
         # 자막은 카메라가 움직인 뒤에 얹는다. 그래야 글자가 같이 흔들리지 않는다.
         ass = subs.build(cut.subtitle, cut.duration_sec, cfg, font,
                          subs_dir / f"{cut.stem}.ass")
+        filters = [subs.filter_arg(ass)] if ass else []
+        # 페이드는 자막 위에 건다. 화면 전체가 같이 어두워져야 한다.
+        fade = video.fade_filter(cut.duration_sec, cfg,
+                                 first=idx == 0, last=idx == total - 1)
+        if fade:
+            filters.append(fade)
         cut.clip = video.build_clip(
             cut.image, pad_wavs[idx], paths.clips / f"{cut.stem}.mp4",
             cfg, cut.motion, cut.frames,
-            extra_video=subs.filter_arg(ass) if ass else "",
+            extra_video=",".join(filters),
         )
         return cut
 
@@ -121,9 +135,22 @@ def build(paths: Paths, engine: str = "edge", on_event=_noop,
             on_event(stage="clip", i=done, total=total, label=cut.stem,
                      seconds=round(cut.duration_sec, 2))
 
-    # 3) 합치기
+    # 3) 배경음악·효과음
+    narration = video.join_audio(pad_wavs, paths.work / "narration.wav", paths.work)
+    bgm = audio_mod.find_bgm(paths.assets, scr.bgm)
+    sfx = [(audio_mod.find_sfx(paths.assets, c.sfx, c.n), c.start_sec)
+           for c in scr.cuts if c.sfx]
+    if bgm or sfx:
+        on_event(stage="audio", total=total,
+                 bgm=bgm.name if bgm else None, sfx=len(sfx))
+        full_audio = audio_mod.mix(narration, paths.work / "full_audio.wav",
+                                   cfg, total_sec, bgm=bgm, sfx=sfx)
+    else:
+        full_audio = narration
+
+    # 4) 합치기
     on_event(stage="concat", i=0, total=total)
-    video.concat([c.clip for c in scr.cuts], pad_wavs, paths.final, paths.work)
+    video.concat([c.clip for c in scr.cuts], full_audio, paths.final, paths.work)
     on_event(stage="done", total=total, seconds=round(total_sec, 2))
 
     return Result(
@@ -134,6 +161,8 @@ def build(paths: Paths, engine: str = "edge", on_event=_noop,
         elapsed_sec=time.time() - started,
         cuts=scr.cuts,
         title=scr.title,
+        bgm=bgm,
+        sfx_count=len(sfx),
     )
 
 

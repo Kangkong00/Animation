@@ -30,6 +30,8 @@ DEFAULTS = {
     "motion_quality": "max",
     "workers": 0,
     "image_naming": "strict",
+    "bgm_duck": "medium",
+    "sfx_volume": 0.6,
 }
 
 # 정지 이미지가 흔들려 보이기 시작하는 한계선.
@@ -54,6 +56,8 @@ class Config:
         self.motion_strength = float(data["motion_strength"])
         self.subtitle = data["subtitle"]
         self.bgm_volume = float(data["bgm_volume"])
+        self.bgm_duck = data["bgm_duck"]
+        self.sfx_volume = float(data["sfx_volume"])
         self.fade_in_sec = float(data["fade_in_sec"])
         self.fade_out_sec = float(data["fade_out_sec"])
         self.transition = data["transition"]
@@ -102,6 +106,16 @@ def load(path: str | Path = "config.json") -> Config:
         raise ConfigError(
             f"motion_quality '{data['motion_quality']}' 는 알 수 없는 값입니다. "
             f"가능한 값: {', '.join(SUPERSAMPLE_BY_QUALITY)}"
+        )
+    # 예전 설정 파일 호환
+    if data["bgm_duck"] is True:
+        data["bgm_duck"] = "medium"
+    elif data["bgm_duck"] is False:
+        data["bgm_duck"] = "off"
+    if data["bgm_duck"] not in ("off", "light", "medium", "strong"):
+        raise ConfigError(
+            f"bgm_duck '{data['bgm_duck']}' 는 알 수 없는 값입니다. "
+            "가능한 값: off, light, medium, strong"
         )
     if data["image_naming"] not in ("strict", "ordered"):
         raise ConfigError(

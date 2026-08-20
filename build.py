@@ -38,8 +38,15 @@ def make_reporter():
         elif stage in STAGE_NAMES and stage != "concat":
             print(f"  {STAGE_NAMES[stage]}  {e['i']:>2}/{e['total']}  "
                   f"{e['label']}  {e['seconds']:.2f}초", flush=True)
+        elif stage == "audio":
+            bits = []
+            if e.get("bgm"):
+                bits.append(f"배경음악 {e['bgm']}")
+            if e.get("sfx"):
+                bits.append(f"효과음 {e['sfx']}개")
+            print(f"\n  소리 섞는 중 — {', '.join(bits)}", flush=True)
         elif stage == "concat":
-            print("\n  합치는 중...", flush=True)
+            print("  합치는 중...", flush=True)
     return report
 
 
@@ -98,6 +105,10 @@ def main() -> int:
         print(f"  총 컷     {len(res.cuts)}개")
         print(f"  총 길이   {fmt_time(res.total_sec)}")
         print(f"  처리 시간 {fmt_time(res.elapsed_sec)}")
+        if res.bgm:
+            print(f"  배경음악  {res.bgm.name}")
+        if res.sfx_count:
+            print(f"  효과음    {res.sfx_count}개")
         print(f"  컷별 클립 {paths.clips}")
         print(f"  컷별 음성 {paths.audio}")
         print("-" * 52 + "\n")

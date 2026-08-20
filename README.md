@@ -70,6 +70,31 @@ Actions 탭  →  왼쪽에서 '영상 만들기'  →  Run workflow  →  초�
 
 ---
 
+## 배경음악과 효과음
+
+### 배경음악
+
+`input/` 폴더에 **`bgm.mp3`** 라는 이름으로 넣으면 자동으로 깔립니다.
+(`.m4a` `.wav` `.ogg` `.flac` 도 됩니다.)
+
+- 영상보다 짧으면 알아서 반복해 채웁니다
+- 볼륨은 15%, 시작 1초 페이드인 · 끝 2초 페이드아웃
+- **나레이션이 나오는 동안 배경음악이 스스로 작아집니다** (더킹)
+
+다른 이름을 쓰려면 대본에 `"bgm": "파일이름.mp3"` 를 넣으세요.
+
+### 효과음
+
+`input/sfx/` 폴더에 넣고, 대본의 컷에 이름을 적습니다.
+
+```json
+{ "n": 5, "narration": "...", "motion": "pan_up", "sfx": "thunder.mp3" }
+```
+
+그 컷이 시작하는 순간에 재생됩니다.
+
+---
+
 ## 대본 형식
 
 ```json
@@ -112,7 +137,10 @@ Actions 탭  →  왼쪽에서 '영상 만들기'  →  Run workflow  →  초�
 | `subtitle.max_chars_per_line` | 한 줄 최대 글자 수 (기본 20) |
 | `subtitle.bottom_margin_pct` | 화면 아래에서 띄우는 거리 (기본 12%) |
 | `subtitle.font` | 자막 폰트 이름 |
-| `bgm_volume` | 배경음악 볼륨 |
+| `bgm_volume` | 배경음악 볼륨 (0.15 = 15%) |
+| `bgm_duck` | 말할 때 배경음악을 얼마나 누를지. `off` · `light` 약 4dB · `medium` 약 8dB · `strong` 약 12dB |
+| `sfx_volume` | 효과음 볼륨 |
+| `fade_in_sec` · `fade_out_sec` | 화면과 배경음악의 페이드 길이 |
 
 ---
 
@@ -160,6 +188,9 @@ python3 build.py            # 조립
 | `output/final.mp4` | 완성본 |
 | `output/clips/cut01.mp4` … | 컷별 개별 클립 |
 | `output/audio/cut01.mp3` … | 컷별 나레이션 음성 |
+
+컷별 클립에는 자막까지 구워져 있고 배경음악은 빠져 있습니다.
+캡컷으로 가져가 음악만 새로 깔 수 있습니다.
 
 중간에 멈춰도 여기까지 만들어진 파일은 남습니다. 다시 실행하면 이미 만든
 음성은 건너뛰고 이어서 진행합니다. 음성부터 새로 만들려면 `--fresh` 를 붙이세요.

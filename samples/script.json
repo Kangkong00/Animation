@@ -30,12 +30,14 @@
       "n": 5,
       "narration": "가이아는 홀로 하늘을 낳았습니다. 그 하늘의 이름이 우라노스입니다.",
       "subtitle": "가이아가 낳은 하늘, 우라노스",
-      "motion": "pan_up"
+      "motion": "pan_up",
+      "sfx": "thunder.mp3"
     },
     {
       "n": 6,
       "narration": "그리고 어머니의 몸 위에 올라탄 하늘은, 태어나는 자식들을 하나씩 땅 속 깊은 곳으로 밀어 넣기 시작했습니다.",
-      "motion": "pan_down"
+      "motion": "pan_down",
+      "sfx": "thunder.mp3"
     }
   ],
   "ending_card": "아버지에게 삼켜진 다섯 남매는 아직 살아 있습니다. 다음 편, 신들의 전쟁."

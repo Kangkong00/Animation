@@ -84,6 +84,19 @@ def silent_audio(dst: Path, seconds: float) -> Path:
     return dst
 
 
+def fade_filter(duration: float, cfg: Config,
+                first: bool, last: bool) -> str:
+    """첫 컷은 어둠에서 밝아지고, 마지막 컷은 어둠으로 잠긴다."""
+    parts = []
+    if first and cfg.fade_in_sec > 0:
+        d = min(cfg.fade_in_sec, duration)
+        parts.append(f"fade=t=in:st=0:d={d:.3f}")
+    if last and cfg.fade_out_sec > 0:
+        d = min(cfg.fade_out_sec, duration)
+        parts.append(f"fade=t=out:st={duration - d:.3f}:d={d:.3f}")
+    return ",".join(parts)
+
+
 def build_clip(image: Path, audio_wav: Path, out: Path, cfg: Config,
                motion: str, frames: int, extra_video: str = "") -> Path:
     """컷 하나를 mp4 로. 이 파일만 따로 떼어 캡컷으로 가져가도 쓸 수 있다."""
@@ -112,8 +125,18 @@ def _concat_list(paths: list[Path], listfile: Path) -> Path:
     return listfile
 
 
-def concat(clips: list[Path], audio_wavs: list[Path], out: Path, workdir: Path) -> Path:
-    """영상은 무손실 복사로, 소리는 하나의 연속 트랙으로 붙인다."""
+def join_audio(audio_wavs: list[Path], out: Path, workdir: Path) -> Path:
+    """컷별 나레이션을 하나의 연속 트랙으로. 무손실이라 이어 붙여도 안 밀린다."""
+    run([
+        "ffmpeg", "-y", "-v", "error", "-f", "concat", "-safe", "0",
+        "-i", str(_concat_list(audio_wavs, workdir / "audio.txt")),
+        "-c:a", "copy", str(out),
+    ], "음성 이어붙이기")
+    return out
+
+
+def concat(clips: list[Path], full_audio: Path, out: Path, workdir: Path) -> Path:
+    """영상은 무손실로 복사해 붙이고, 다 만들어 둔 소리를 얹는다."""
     out.parent.mkdir(parents=True, exist_ok=True)
     workdir.mkdir(parents=True, exist_ok=True)
 
@@ -123,13 +146,6 @@ def concat(clips: list[Path], audio_wavs: list[Path], out: Path, workdir: Path) 
         "-i", str(_concat_list(clips, workdir / "clips.txt")),
         "-map", "0:v:0", "-c:v", "copy", "-an", str(video_only),
     ], "영상 이어붙이기")
-
-    full_audio = workdir / "full_audio.wav"
-    run([
-        "ffmpeg", "-y", "-v", "error", "-f", "concat", "-safe", "0",
-        "-i", str(_concat_list(audio_wavs, workdir / "audio.txt")),
-        "-c:a", "copy", str(full_audio),
-    ], "음성 이어붙이기")
 
     run([
         "ffmpeg", "-y", "-v", "error",
