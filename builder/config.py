@@ -29,6 +29,7 @@ DEFAULTS = {
     "fade_out_sec": 2.0,
     "motion_quality": "max",
     "workers": 0,
+    "image_naming": "strict",
 }
 
 # 정지 이미지가 흔들려 보이기 시작하는 한계선.
@@ -57,6 +58,7 @@ class Config:
         self.fade_out_sec = float(data["fade_out_sec"])
         self.transition = data["transition"]
         self.transition_sec = float(data["transition_sec"])
+        self.image_naming = data["image_naming"]
         self.supersample = SUPERSAMPLE_BY_QUALITY[data["motion_quality"]]
         self.workers = int(data["workers"]) or (os.cpu_count() or 2)
 
@@ -100,6 +102,11 @@ def load(path: str | Path = "config.json") -> Config:
         raise ConfigError(
             f"motion_quality '{data['motion_quality']}' 는 알 수 없는 값입니다. "
             f"가능한 값: {', '.join(SUPERSAMPLE_BY_QUALITY)}"
+        )
+    if data["image_naming"] not in ("strict", "ordered"):
+        raise ConfigError(
+            f"image_naming '{data['image_naming']}' 는 알 수 없는 값입니다. "
+            "가능한 값: strict, ordered"
         )
     if int(data["fps"]) <= 0:
         raise ConfigError("fps 는 1 이상이어야 합니다.")

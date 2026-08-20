@@ -24,5 +24,6 @@
   "fade_in_sec": 1.0,
   "fade_out_sec": 2.0,
   "motion_quality": "max",
-  "workers": 0
+  "workers": 0,
+  "image_naming": "strict"
 }

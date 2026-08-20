@@ -73,17 +73,20 @@ def main() -> int:
             return 0
 
         print("\n입력 점검...")
-        for w in pipeline.check_images(paths):
+        info = pipeline.inspect(paths)
+        scr = info["script"]
+        for w in info["warnings"]:
             print(f"  알림  {w}")
 
-        if args.check:
-            import builder.script as sm
-            scr = sm.load(paths.script)
-            sm.attach_images(scr, paths.images)
-            print(f"  이상 없음 — {len(scr.cuts)}컷, 나레이션 {scr.total_narration_chars}자\n")
-            return 0
+        if info["naming"] == "ordered":
+            print("\n  파일명 순서대로 컷을 배정했습니다. 맞는지 확인하세요.")
+            for cut in scr.cuts:
+                print(f"    컷 {cut.n:>2}  ←  {cut.image.name}")
 
-        print("  이상 없음\n")
+        print(f"  이상 없음 — {len(scr.cuts)}컷, "
+              f"나레이션 {scr.total_narration_chars}자\n")
+        if args.check:
+            return 0
         res = pipeline.build(paths, engine=args.tts, on_event=make_reporter(),
                              reuse_audio=not args.fresh)
 

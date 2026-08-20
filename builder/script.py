@@ -8,7 +8,10 @@ from pathlib import Path
 
 MOTIONS = ("zoom_in", "zoom_out", "pan_left", "pan_right", "pan_up", "pan_down")
 IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".webp")
+# ffmpeg 이 열지 못하는데 아이폰·아이패드에서 흔히 나오는 형식
+UNSUPPORTED_EXTS = {".heic": "HEIC", ".heif": "HEIF", ".avif": "AVIF"}
 _IMAGE_RE = re.compile(r"^cut0*(\d+)$", re.IGNORECASE)
+_NUM_RE = re.compile(r"(\d+)")
 
 
 class ScriptError(Exception):
@@ -97,35 +100,82 @@ def load(path: str | Path) -> Script:
     )
 
 
-def scan_images(folder: str | Path) -> dict[int, Path]:
-    """cut01.png 형태의 파일을 번호로 수집한다."""
-    folder = Path(folder)
+def natural_key(p: Path):
+    """IMG_2 가 IMG_10 보다 앞에 오도록. 단순 알파벳순이면 순서가 뒤집힌다."""
+    return [int(t) if t.isdigit() else t.lower()
+            for t in _NUM_RE.split(p.stem)]
+
+
+def _image_files(folder: Path) -> list[Path]:
     if not folder.is_dir():
         raise ScriptError(f"이미지 폴더가 없습니다: {folder}")
 
-    found: dict[int, Path] = {}
-    for p in sorted(folder.iterdir()):
-        if p.suffix.lower() not in IMAGE_EXTS:
+    files, blocked = [], []
+    for p in folder.iterdir():
+        if not p.is_file() or p.name.startswith("."):
             continue
+        ext = p.suffix.lower()
+        if ext in UNSUPPORTED_EXTS:
+            blocked.append((p.name, UNSUPPORTED_EXTS[ext]))
+        elif ext in IMAGE_EXTS:
+            files.append(p)
+
+    if blocked:
+        names = ", ".join(n for n, _ in blocked[:5])
+        more = f" 외 {len(blocked) - 5}장" if len(blocked) > 5 else ""
+        raise ScriptError(
+            f"{blocked[0][1]} 형식은 열 수 없습니다: {names}{more}\n"
+            "  아이폰·아이패드 사진은 기본이 HEIC 입니다.\n"
+            "  설정 > 카메라 > 포맷 > '높은 호환성' 으로 바꾸거나,\n"
+            "  사진을 올리기 전에 PNG 또는 JPG 로 저장하세요."
+        )
+    if not files:
+        raise ScriptError(f"{folder} 안에 이미지가 없습니다.")
+    return files
+
+
+def scan_images(folder: str | Path, naming: str = "strict",
+                expected: int | None = None) -> dict[int, Path]:
+    """이미지를 컷 번호에 배정한다.
+
+    strict  — cut01.png 규칙. 번호가 곧 순서다.
+    ordered — 파일명을 숫자까지 고려해 정렬한 순서대로 1번부터 배정한다.
+              사진앱에서 그대로 올린 IMG_4821.png 같은 이름을 위한 것.
+    """
+    folder = Path(folder)
+    files = _image_files(folder)
+
+    if naming == "ordered":
+        if expected is not None and len(files) != expected:
+            raise ScriptError(
+                f"이미지가 {len(files)}장인데 대본은 {expected}컷입니다.\n"
+                "  순서대로 배정하는 방식(ordered)에서는 개수가 정확히 같아야 합니다.\n"
+                "  빠진 그림이 없는지 확인하세요."
+            )
+        return {i: p for i, p in enumerate(sorted(files, key=natural_key), start=1)}
+
+    found: dict[int, Path] = {}
+    for p in sorted(files, key=natural_key):
         m = _IMAGE_RE.match(p.stem)
         if not m:
             raise ScriptError(
                 f"이미지 파일명 규칙에 맞지 않습니다: {p.name}\n"
-                "  cut01.png ... cut28.png 형식이어야 합니다."
+                "  cut01.png ... cut28.png 형식이어야 합니다.\n"
+                "  이름을 바꾸기 어려우면 config.json 의 image_naming 을\n"
+                "  \"ordered\" 로 두세요. 파일명 순서대로 컷을 배정합니다."
             )
         n = int(m.group(1))
         if n in found:
             raise ScriptError(f"컷 {n} 이미지가 중복입니다: {found[n].name} / {p.name}")
         found[n] = p
 
-    if not found:
-        raise ScriptError(f"{folder} 안에 이미지가 없습니다.")
     return found
 
 
-def attach_images(script: Script, folder: str | Path) -> None:
+def attach_images(script: Script, folder: str | Path,
+                  naming: str = "strict") -> None:
     """대본 컷과 이미지를 1:1로 묶는다. 빠진 번호는 조용히 넘기지 않고 중단한다."""
-    found = scan_images(folder)
+    found = scan_images(folder, naming, expected=len(script.cuts))
     want = {c.n for c in script.cuts}
     have = set(found)
 

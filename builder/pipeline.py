@@ -60,7 +60,7 @@ def build(paths: Paths, engine: str = "edge", on_event=_noop,
 
     cfg = config_mod.load(paths.config)
     scr = script_mod.load(paths.script)
-    script_mod.attach_images(scr, paths.images)
+    script_mod.attach_images(scr, paths.images, cfg.image_naming)
     total = len(scr.cuts)
 
     on_event(stage="start", total=total, title=scr.title)
@@ -127,14 +127,19 @@ def build(paths: Paths, engine: str = "edge", on_event=_noop,
     )
 
 
-def check_images(paths: Paths) -> list[str]:
-    """비율이 16:9 가 아닌 이미지를 미리 알려 준다 (자르지 않고 여백을 넣는다)."""
+def inspect(paths: Paths) -> dict:
+    """조립 전에 입력이 맞는지 본다. 어떤 그림이 몇 번 컷이 되는지도 함께 돌려준다."""
+    cfg = config_mod.load(paths.config)
+    scr = script_mod.load(paths.script)
+    script_mod.attach_images(scr, paths.images, cfg.image_naming)
+
     warns = []
-    for n, p in sorted(script_mod.scan_images(paths.images).items()):
-        w, h = probe_size(p)
+    for cut in scr.cuts:
+        w, h = probe_size(cut.image)
         if w and h and abs(w / h - 16 / 9) > 0.01:
-            warns.append(f"cut{n:02d} ({w}x{h}) 는 16:9 가 아닙니다 → 검은 여백이 들어갑니다")
-    return warns
+            warns.append(f"컷 {cut.n} ({w}x{h}) 는 16:9 가 아닙니다 → 검은 여백이 들어갑니다")
+
+    return {"script": scr, "warnings": warns, "naming": cfg.image_naming}
 
 
 def clean(paths: Paths) -> None:
