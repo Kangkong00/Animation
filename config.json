@@ -12,7 +12,7 @@
   "motion_strength": 1.08,
   "subtitle": {
     "font": "Noto Sans KR",
-    "size": 48,
+    "size": 64,
     "color": "#FFFFFF",
     "outline_color": "#000000",
     "outline_width": 3,

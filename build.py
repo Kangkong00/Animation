@@ -11,7 +11,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from builder import pipeline, tts
+from builder import fonts, pipeline, tts
 from builder.config import ConfigError
 from builder.media import MediaError
 from builder.script import ScriptError
@@ -31,7 +31,10 @@ def make_reporter():
     def report(**e):
         stage = e.get("stage")
         if stage == "start":
-            print(f"  대본: {e['title']}  ({e['total']}컷)\n")
+            print(f"  대본: {e['title']}  ({e['total']}컷)")
+            print(f"  자막 폰트: {e['font']}\n")
+        elif stage == "warn":
+            print(f"  알림  {e['message']}")
         elif stage in STAGE_NAMES and stage != "concat":
             print(f"  {STAGE_NAMES[stage]}  {e['i']:>2}/{e['total']}  "
                   f"{e['label']}  {e['seconds']:.2f}초", flush=True)
@@ -100,7 +103,8 @@ def main() -> int:
         print("-" * 52 + "\n")
         return 0
 
-    except (ScriptError, ConfigError, MediaError, tts.TTSError) as e:
+    except (ScriptError, ConfigError, MediaError, tts.TTSError,
+            fonts.FontError) as e:
         print(f"\n[중단] {e}\n", file=sys.stderr)
         return 1
 

@@ -85,7 +85,9 @@ def load(path: str | Path) -> Script:
                 f"컷 {n}: motion '{motion}' 은 알 수 없는 값입니다. "
                 f"가능한 값: {', '.join(MOTIONS)}"
             )
-        subtitle = (item.get("subtitle") or narration).strip()
+        # subtitle 키가 없으면 나레이션을 그대로 쓰고, "" 로 두면 자막을 넣지 않는다
+        raw_sub = item.get("subtitle")
+        subtitle = narration if raw_sub is None else raw_sub.strip()
         cuts.append(Cut(n=n, narration=narration, subtitle=subtitle,
                         motion=motion, sfx=item.get("sfx")))
 
