@@ -1,0 +1,28 @@
+{
+  "resolution": [
+    1920,
+    1080
+  ],
+  "fps": 30,
+  "tts_voice": "ko-KR-InJoonNeural",
+  "tts_rate": "-5%",
+  "cut_padding_sec": 0.4,
+  "transition": "dissolve",
+  "transition_sec": 0.5,
+  "motion_strength": 1.08,
+  "subtitle": {
+    "font": "Noto Sans KR",
+    "size": 48,
+    "color": "#FFFFFF",
+    "outline_color": "#000000",
+    "outline_width": 3,
+    "bottom_margin_pct": 12,
+    "max_width_pct": 80,
+    "max_chars_per_line": 20
+  },
+  "bgm_volume": 0.15,
+  "fade_in_sec": 1.0,
+  "fade_out_sec": 2.0,
+  "motion_quality": "max",
+  "workers": 0
+}

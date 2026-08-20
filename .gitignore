@@ -1,0 +1,6 @@
+output/
+work/
+input/images/*
+!input/images/.gitkeep
+__pycache__/
+*.pyc
