@@ -1,0 +1,102 @@
+name: 영상 만들기
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: '무엇으로 만들까요'
+        type: choice
+        default: '실제 (input 폴더)'
+        options:
+          - '실제 (input 폴더)'
+          - '데모 (samples 폴더 · 도구 점검용)'
+      check_only:
+        description: '점검만 하고 끝내기 (이미지와 대본이 맞는지 40초 만에 확인)'
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 어느 폴더로 만들지 정하기
+        id: src
+        run: |
+          if [[ "${{ inputs.mode }}" == 데모* ]]; then
+            echo "images=samples/images"   >> "$GITHUB_OUTPUT"
+            echo "script=samples/script.json" >> "$GITHUB_OUTPUT"
+            echo "::notice::데모 모드 — samples 폴더로 만듭니다"
+          else
+            echo "images=input/images"     >> "$GITHUB_OUTPUT"
+            echo "script=input/script.json" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: ffmpeg · 한글 폰트 준비
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-noto-cjk
+          ffmpeg -version | head -1
+          echo "코어 수: $(nproc)"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: 파이썬 패키지 설치
+        run: pip install -q edge-tts mutagen
+
+      - name: 입력 점검
+        run: python3 build.py --check --images "${{ steps.src.outputs.images }}" --script "${{ steps.src.outputs.script }}"
+
+      - name: 조립
+        if: ${{ !inputs.check_only }}
+        run: python3 build.py --images "${{ steps.src.outputs.images }}" --script "${{ steps.src.outputs.script }}"
+
+      - name: 완성본 이름 붙이기
+        if: ${{ !inputs.check_only }}
+        id: name
+        run: |
+          TITLE=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1],encoding='utf-8')).get('title','완성본'))" "${{ steps.src.outputs.script }}")
+          SAFE=$(echo "$TITLE" | tr '/\\:*?"<>|' '_')
+          mkdir -p deliver
+          cp output/final.mp4 "deliver/${SAFE}.mp4"
+          echo "title=$SAFE" >> "$GITHUB_OUTPUT"
+          ls -lh deliver/
+
+      - name: 완성본 올리기
+        if: ${{ !inputs.check_only }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: 완성본
+          path: deliver/*.mp4
+          retention-days: 30
+
+      - name: 컷별 클립·음성 올리기
+        if: ${{ !inputs.check_only }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: 컷별-클립과-음성
+          path: |
+            output/clips/
+            output/audio/
+          retention-days: 30
+
+      - name: 요약
+        if: ${{ !inputs.check_only }}
+        run: |
+          {
+            echo "## ${{ steps.name.outputs.title }}"
+            echo ""
+            echo "| 항목 | 값 |"
+            echo "|---|---|"
+            echo "| 총 길이 | $(ffprobe -v error -show_entries format=duration -of csv=p=0 output/final.mp4) 초 |"
+            echo "| 컷 수 | $(ls output/clips/*.mp4 | wc -l) 개 |"
+            echo "| 파일 크기 | $(du -h output/final.mp4 | cut -f1) |"
+            echo ""
+            echo "위쪽 **Artifacts** 에서 \`완성본\` 을 내려받으세요."
+          } >> "$GITHUB_STEP_SUMMARY"

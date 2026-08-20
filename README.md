@@ -96,5 +96,5 @@ python3 build.py             # 조립
 실제 컷 이미지가 아직 없을 때 파이프라인만 확인하려면:
 
 ```bash
-python3 tools/make_sample_images.py 6 input/images
+python3 tools/make_sample_images.py 6 samples/images
 ```
