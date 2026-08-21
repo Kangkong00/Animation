@@ -38,18 +38,23 @@ async def _edge_save(text: str, out: Path, voice: str, rate: str) -> list[dict]:
 
     comm = edge_tts.Communicate(text, voice, rate=rate)
     words: list[dict] = []
+    seen: set[str] = set()
     with open(out, "wb") as f:
         async for chunk in comm.stream():
-            if chunk["type"] == "audio":
+            kind = chunk.get("type", "?")
+            seen.add(kind)
+            if kind == "audio":
                 f.write(chunk["data"])
-            elif chunk["type"] == "WordBoundary":
-                # edge-tts 는 100나노초 단위로 준다. 초로 바꿔 둔다.
+            elif "offset" in chunk and chunk.get("text"):
+                # 낱말 경계의 이름이 판마다 다를 수 있어 종류를 따지지 않고
+                # 시각과 글자가 함께 오는 것은 모두 받는다.
+                # 단위는 100나노초. 초로 바꿔 둔다.
                 words.append({
                     "text": chunk["text"],
                     "start": chunk["offset"] / 1e7,
-                    "end": (chunk["offset"] + chunk["duration"]) / 1e7,
+                    "end": (chunk["offset"] + chunk.get("duration", 0)) / 1e7,
                 })
-    return words
+    return {"words": words, "types": sorted(seen)}
 
 
 def _edge(text: str, out: Path, voice: str, rate: str, cut_label: str) -> None:
@@ -63,9 +68,9 @@ def _edge(text: str, out: Path, voice: str, rate: str, cut_label: str) -> None:
     last = None
     for attempt in range(1, RETRIES + 1):
         try:
-            words = asyncio.run(_edge_save(text, out, voice, rate))
+            got = asyncio.run(_edge_save(text, out, voice, rate))
             if out.exists() and out.stat().st_size > 0:
-                save_words(out, words)
+                save_words(out, got)
                 return
             last = "빈 파일이 생성되었습니다"
         except Exception as e:  # 네트워크 의존이라 예외 종류가 다양하다
@@ -118,20 +123,33 @@ def words_path(audio: Path) -> Path:
     return Path(audio).with_suffix(".words.json")
 
 
-def save_words(audio: Path, words: list[dict]) -> None:
+def save_words(audio: Path, data: dict) -> None:
     words_path(audio).write_text(
-        json.dumps(words, ensure_ascii=False), encoding="utf-8")
+        json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+
+def _read(audio: Path):
+    p = words_path(audio)
+    if not p.exists():
+        return None
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
 
 
 def load_words(audio: Path) -> list[dict]:
     """낱말 시각표. 없으면 빈 목록 — 자막은 어림 계산으로 넘어간다."""
-    p = words_path(audio)
-    if not p.exists():
-        return []
-    try:
-        return json.loads(p.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return []
+    data = _read(audio)
+    if isinstance(data, dict):
+        return data.get("words") or []
+    return data or []
+
+
+def stream_kinds(audio: Path) -> list[str]:
+    """음성을 받을 때 어떤 종류의 응답이 왔는지. 낱말 시각이 비었을 때 원인 확인용."""
+    data = _read(audio)
+    return data.get("types", []) if isinstance(data, dict) else []
 
 
 def synth(text: str, out: Path, voice: str, rate: str,

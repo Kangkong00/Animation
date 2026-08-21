@@ -69,6 +69,13 @@ def split_events(text: str, max_chars: int) -> list[list[str]]:
     return [lines[i:i + MAX_LINES] for i in range(0, len(lines), MAX_LINES)] or [[]]
 
 
+_last_reason: list[str] = []
+
+
+def why_estimated() -> str:
+    return _last_reason[0] if _last_reason else ""
+
+
 def _letters(text: str) -> str:
     """비교용으로 공백과 문장부호를 걷어낸 글자만 남긴다."""
     return "".join(ch for ch in text if ch.isalnum())
@@ -82,6 +89,8 @@ def times_from_words(events: list[list[str]], words: list[dict],
     어느 낱말에 해당하는지 알 수 없으므로 None 을 돌려주고 어림 계산으로 넘긴다.
     """
     if not words:
+        _last_reason.clear()
+        _last_reason.append("낱말 시각이 없음 (words.json 비어 있음)")
         return None
 
     spoken, owner = [], []
@@ -91,6 +100,11 @@ def times_from_words(events: list[list[str]], words: list[dict],
             owner.append(i)
     written = _letters("".join("".join(ev) for ev in events))
     if not spoken or "".join(spoken) != written:
+        _last_reason.clear()
+        _last_reason.append(
+            f"글자가 어긋남 · 낱말 {len(words)}개\n"
+            f"        음성쪽: {''.join(spoken)[:60]}\n"
+            f"        자막쪽: {written[:60]}")
         return None
 
     starts, pos = [], 0
@@ -167,6 +181,7 @@ def build(text: str, duration: float, cfg, font: str, out: Path,
     sub = cfg.subtitle
     events = split_events(text, int(sub["max_chars_per_line"]))
 
+    _last_reason.clear()
     times = times_from_words(events, words or [], duration)
     exact = times is not None
     if times is None:

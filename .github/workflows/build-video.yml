@@ -119,6 +119,10 @@ jobs:
           "
           echo "--- 빌드 요약 ---"
           cat output/summary.json
+          if [ -f output/shorts_summary.json ]; then
+            echo "--- 쇼츠 요약 ---"
+            cat output/shorts_summary.json
+          fi
 
       - name: 요약
         if: ${{ !inputs.check_only }}

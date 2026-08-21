@@ -128,6 +128,11 @@ def build(paths: Paths, engine: str = "edge", on_event=_noop,
         filters = []
         if made:
             ass, cut.subtitle_exact = made
+            if not cut.subtitle_exact:
+                cut.timing_note = subs.why_estimated()
+                if not cut.words:
+                    kinds = tts.stream_kinds(cut.audio)
+                    cut.timing_note += f" · 받은 응답 종류: {kinds or '기록 없음'}"
             filters.append(subs.filter_arg(ass))
         # 페이드는 자막 위에 건다. 화면 전체가 같이 어두워져야 한다.
         fade = video.fade_filter(

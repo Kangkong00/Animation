@@ -137,7 +137,10 @@ def main() -> int:
 
         # 빌드 결과를 파일로도 남긴다. 로그를 뒤지지 않고 한눈에 보기 위해서다.
         subbed = [c for c in res.cuts if c.subtitle.strip()]
-        (paths.out / "summary.json").write_text(json.dumps({
+        name = "shorts_summary.json" if args.shorts else "summary.json"
+        notes = {f"컷 {c.n}": c.timing_note
+                 for c in subbed if not c.subtitle_exact and c.timing_note}
+        (paths.out / name).write_text(json.dumps({
             "제목": res.title,
             "총 길이(초)": round(res.total_sec, 3),
             "컷 수": len(res.cuts),
@@ -147,6 +150,8 @@ def main() -> int:
             "자막 시각 어림": sum(1 for c in subbed if not c.subtitle_exact),
             "배경음악": res.bgm.name if res.bgm else None,
             "효과음 수": res.sfx_count,
+            "낱말 시각 개수": {f"컷 {c.n}": len(c.words) for c in res.cuts},
+            "어림잡은 이유": notes or None,
         }, ensure_ascii=False, indent=2), encoding="utf-8")
         return 0
 

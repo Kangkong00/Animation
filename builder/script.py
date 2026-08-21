@@ -35,6 +35,7 @@ class Cut:
     start_sec: float = 0.0
     words: list = field(default_factory=list)
     subtitle_exact: bool = False
+    timing_note: str = ""
 
     @property
     def stem(self) -> str:
