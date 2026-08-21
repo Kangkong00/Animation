@@ -109,6 +109,16 @@ def main() -> int:
             print(f"  배경음악  {res.bgm.name}")
         if res.sfx_count:
             print(f"  효과음    {res.sfx_count}개")
+        subbed = [c for c in res.cuts if c.subtitle.strip()]
+        if subbed:
+            exact = sum(1 for c in subbed if c.subtitle_exact)
+            if exact == len(subbed):
+                mark = "말한 시각 그대로"
+            elif exact == 0:
+                mark = "글자 수로 어림잡음"
+            else:
+                mark = f"{exact}컷 실측 · {len(subbed) - exact}컷 어림"
+            print(f"  자막 시각  {mark}")
         print(f"  컷별 클립 {paths.clips}")
         print(f"  컷별 음성 {paths.audio}")
         print("-" * 52 + "\n")

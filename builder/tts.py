@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import shutil
 import subprocess
 import tempfile
@@ -27,11 +28,28 @@ class TTSError(Exception):
 
 # ----------------------------------------------------------------- edge-tts
 
-async def _edge_save(text: str, out: Path, voice: str, rate: str) -> None:
+async def _edge_save(text: str, out: Path, voice: str, rate: str) -> list[dict]:
+    """음성을 받으면서 낱말이 언제 발음되는지도 함께 받아 둔다.
+
+    이 시각이 있어야 자막이 말과 정확히 맞는다. 없으면 글자 수로 어림잡는
+    수밖에 없고, 그러면 자막이 말보다 먼저 넘어가거나 늦게 남는다.
+    """
     import edge_tts
 
     comm = edge_tts.Communicate(text, voice, rate=rate)
-    await comm.save(str(out))
+    words: list[dict] = []
+    with open(out, "wb") as f:
+        async for chunk in comm.stream():
+            if chunk["type"] == "audio":
+                f.write(chunk["data"])
+            elif chunk["type"] == "WordBoundary":
+                # edge-tts 는 100나노초 단위로 준다. 초로 바꿔 둔다.
+                words.append({
+                    "text": chunk["text"],
+                    "start": chunk["offset"] / 1e7,
+                    "end": (chunk["offset"] + chunk["duration"]) / 1e7,
+                })
+    return words
 
 
 def _edge(text: str, out: Path, voice: str, rate: str, cut_label: str) -> None:
@@ -45,8 +63,9 @@ def _edge(text: str, out: Path, voice: str, rate: str, cut_label: str) -> None:
     last = None
     for attempt in range(1, RETRIES + 1):
         try:
-            asyncio.run(_edge_save(text, out, voice, rate))
+            words = asyncio.run(_edge_save(text, out, voice, rate))
             if out.exists() and out.stat().st_size > 0:
+                save_words(out, words)
                 return
             last = "빈 파일이 생성되었습니다"
         except Exception as e:  # 네트워크 의존이라 예외 종류가 다양하다
@@ -93,6 +112,26 @@ def _espeak(text: str, out: Path, voice: str, rate: str, cut_label: str) -> None
 
 
 ENGINES = {"edge": _edge, "espeak": _espeak}
+
+
+def words_path(audio: Path) -> Path:
+    return Path(audio).with_suffix(".words.json")
+
+
+def save_words(audio: Path, words: list[dict]) -> None:
+    words_path(audio).write_text(
+        json.dumps(words, ensure_ascii=False), encoding="utf-8")
+
+
+def load_words(audio: Path) -> list[dict]:
+    """낱말 시각표. 없으면 빈 목록 — 자막은 어림 계산으로 넘어간다."""
+    p = words_path(audio)
+    if not p.exists():
+        return []
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return []
 
 
 def synth(text: str, out: Path, voice: str, rate: str,

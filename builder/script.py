@@ -33,6 +33,8 @@ class Cut:
     frames: int = 0
     clip: Path | None = None
     start_sec: float = 0.0
+    words: list = field(default_factory=list)
+    subtitle_exact: bool = False
 
     @property
     def stem(self) -> str:

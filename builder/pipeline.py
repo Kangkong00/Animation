@@ -91,6 +91,7 @@ def build(paths: Paths, engine: str = "edge", on_event=_noop,
             tts.synth(cut.narration, mp3, cfg.tts_voice, cfg.tts_rate,
                       engine=engine, cut_label=f"컷 {cut.n}")
         cut.audio = mp3
+        cut.words = tts.load_words(mp3)
         cut.audio_sec = probe_duration(mp3)
         cut.frames = video.frames_for(cut.audio_sec + cfg.cut_padding_sec, cfg.fps)
         cut.duration_sec = cut.frames / cfg.fps
@@ -111,9 +112,12 @@ def build(paths: Paths, engine: str = "edge", on_event=_noop,
     def make_clip(idx: int):
         cut = scr.cuts[idx]
         # 자막은 카메라가 움직인 뒤에 얹는다. 그래야 글자가 같이 흔들리지 않는다.
-        ass = subs.build(cut.subtitle, cut.duration_sec, cfg, font,
-                         subs_dir / f"{cut.stem}.ass")
-        filters = [subs.filter_arg(ass)] if ass else []
+        made = subs.build(cut.subtitle, cut.duration_sec, cfg, font,
+                          subs_dir / f"{cut.stem}.ass", words=cut.words)
+        filters = []
+        if made:
+            ass, cut.subtitle_exact = made
+            filters.append(subs.filter_arg(ass))
         # 페이드는 자막 위에 건다. 화면 전체가 같이 어두워져야 한다.
         fade = video.fade_filter(cut.duration_sec, cfg,
                                  first=idx == 0, last=idx == total - 1)
@@ -177,6 +181,16 @@ def inspect(paths: Paths) -> dict:
         w, h = probe_size(cut.image)
         if w and h and abs(w / h - 16 / 9) > 0.01:
             warns.append(f"컷 {cut.n} ({w}x{h}) 는 16:9 가 아닙니다 → 검은 여백이 들어갑니다")
+
+    reworded = [c.n for c in scr.cuts if c.subtitle.strip() != c.narration.strip()]
+    if reworded:
+        nums = ", ".join(str(n) for n in reworded[:8])
+        more = f" 외 {len(reworded) - 8}개" if len(reworded) > 8 else ""
+        warns.append(
+            f"컷 {nums}{more} 은 자막을 나레이션과 다르게 썼습니다.\n"
+            "        읽는 말과 화면 글자가 달라 보이고, 자막이 뜨는 시각도 어림잡게 됩니다.\n"
+            "        그대로 쓰려면 대본에서 subtitle 을 빼세요."
+        )
 
     return {"script": scr, "warnings": warns, "naming": cfg.image_naming}
 

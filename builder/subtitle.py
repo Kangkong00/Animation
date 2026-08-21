@@ -69,6 +69,42 @@ def split_events(text: str, max_chars: int) -> list[list[str]]:
     return [lines[i:i + MAX_LINES] for i in range(0, len(lines), MAX_LINES)] or [[]]
 
 
+def _letters(text: str) -> str:
+    """비교용으로 공백과 문장부호를 걷어낸 글자만 남긴다."""
+    return "".join(ch for ch in text if ch.isalnum())
+
+
+def times_from_words(events: list[list[str]], words: list[dict],
+                     duration: float) -> list[tuple[float, float]] | None:
+    """낱말이 실제로 발음된 시각으로 자막 시간을 잡는다.
+
+    자막이 나레이션을 그대로 옮긴 경우에만 쓸 수 있다. 자막을 따로 줄여 썼다면
+    어느 낱말에 해당하는지 알 수 없으므로 None 을 돌려주고 어림 계산으로 넘긴다.
+    """
+    if not words:
+        return None
+
+    spoken, owner = [], []
+    for i, w in enumerate(words):
+        for ch in _letters(w.get("text", "")):
+            spoken.append(ch)
+            owner.append(i)
+    written = _letters("".join("".join(ev) for ev in events))
+    if not spoken or "".join(spoken) != written:
+        return None
+
+    starts, pos = [], 0
+    for ev in events:
+        n = len(_letters("".join(ev)))
+        starts.append(float(words[owner[pos]]["start"]) if pos < len(owner) else duration)
+        pos += n
+
+    # 첫 자막은 컷과 함께 뜨고, 자막 사이에 빈틈을 두지 않는다. 깜빡여 보인다.
+    starts[0] = 0.0
+    return [(starts[i], starts[i + 1] if i + 1 < len(starts) else duration)
+            for i in range(len(starts))]
+
+
 def _timestamp(seconds: float) -> str:
     seconds = max(0.0, seconds)
     h, rem = divmod(seconds, 3600)
@@ -76,8 +112,23 @@ def _timestamp(seconds: float) -> str:
     return f"{int(h)}:{int(m):02d}:{s:05.2f}"
 
 
-def build(text: str, duration: float, cfg, font: str, out: Path) -> Path | None:
-    """컷 하나짜리 자막 파일. 시간은 컷이 시작하는 순간부터 0초로 센다."""
+def _estimated_times(events, duration):
+    """낱말 시각을 못 쓸 때. 글자 수에 비례해 나눈다 — 어디까지나 어림이다."""
+    weights = [max(1, sum(len(l) for l in ev)) for ev in events]
+    total = sum(weights)
+    times, start = [], 0.0
+    for i, w in enumerate(weights):
+        end = duration if i == len(weights) - 1 else start + duration * w / total
+        times.append((start, end))
+        start = end
+    return times
+
+
+def build(text: str, duration: float, cfg, font: str, out: Path,
+          words: list[dict] | None = None) -> tuple[Path, bool] | None:
+    """컷 하나짜리 자막 파일. 시간은 컷이 시작하는 순간부터 0초로 센다.
+
+    돌려주는 두 번째 값은 시각이 실측인지(True) 어림인지(False)."""
     text = (text or "").strip()
     if not text:
         return None
@@ -85,18 +136,17 @@ def build(text: str, duration: float, cfg, font: str, out: Path) -> Path | None:
     sub = cfg.subtitle
     events = split_events(text, int(sub["max_chars_per_line"]))
 
-    # 글자 수에 비례해 시간을 나눈다. 긴 자막이 더 오래 떠 있어야 읽힌다.
-    weights = [max(1, sum(len(l) for l in ev)) for ev in events]
-    total_weight = sum(weights)
+    times = times_from_words(events, words or [], duration)
+    exact = times is not None
+    if times is None:
+        times = _estimated_times(events, duration)
 
-    body, start = [], 0.0
-    for i, (ev, w) in enumerate(zip(events, weights)):
-        end = duration if i == len(events) - 1 else start + duration * w / total_weight
+    body = []
+    for ev, (start, end) in zip(events, times):
         body.append(
             f"Dialogue: 0,{_timestamp(start)},{_timestamp(end)},Default,,0,0,0,,"
             + r"\N".join(ev)
         )
-        start = end
 
     size, _ = ass_fontsize(font, float(sub["size"]))
     header = _HEADER.format(
@@ -110,7 +160,7 @@ def build(text: str, duration: float, cfg, font: str, out: Path) -> Path | None:
     )
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(header + "\n".join(body) + "\n", encoding="utf-8")
-    return out
+    return out, exact
 
 
 def filter_arg(path: Path) -> str:

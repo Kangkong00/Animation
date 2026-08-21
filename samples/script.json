@@ -5,31 +5,26 @@
     {
       "n": 1,
       "narration": "아무것도 없었습니다. 진짜로, 아무것도요.",
-      "subtitle": "아무것도 없었습니다",
       "motion": "zoom_in"
     },
     {
       "n": 2,
       "narration": "하늘도 없고, 땅도 없고, 시간이라는 것조차 아직 태어나지 않았습니다.",
-      "subtitle": "하늘도 땅도, 시간조차 없었다",
       "motion": "zoom_out"
     },
     {
       "n": 3,
       "narration": "그 텅 빈 어둠의 이름이 카오스였습니다.",
-      "subtitle": "그 어둠의 이름은 카오스",
       "motion": "pan_left"
     },
     {
       "n": 4,
       "narration": "카오스에서 대지의 여신 가이아가 몸을 일으켰습니다.",
-      "subtitle": "대지의 여신 가이아",
       "motion": "pan_right"
     },
     {
       "n": 5,
       "narration": "가이아는 홀로 하늘을 낳았습니다. 그 하늘의 이름이 우라노스입니다.",
-      "subtitle": "가이아가 낳은 하늘, 우라노스",
       "motion": "pan_up",
       "sfx": "thunder.mp3"
     },
