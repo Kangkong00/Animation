@@ -29,7 +29,7 @@ YCbCr Matrix: TV.709
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,{font},{size},{color},{color},{outline_color},{outline_color},0,0,0,0,100,100,0,0,1,{outline},0,2,{margin_lr},{margin_lr},{margin_v},1
+Style: Default,{font},{size},{color},{color},{outline_color},{outline_color},0,0,0,0,100,100,0,0,1,{outline},0,{align},{margin_lr},{margin_lr},{margin_v},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -112,6 +112,37 @@ def _timestamp(seconds: float) -> str:
     return f"{int(h)}:{int(m):02d}:{s:05.2f}"
 
 
+def _header(cfg, font: str, align: int, size: float | None = None,
+            margin_v: int | None = None) -> str:
+    sub = cfg.subtitle
+    px, _ = ass_fontsize(font, float(size if size is not None else sub["size"]))
+    return _HEADER.format(
+        width=cfg.width, height=cfg.height,
+        font=font, size=px, align=align,
+        color=ass_color(sub["color"]),
+        outline_color=ass_color(sub["outline_color"]),
+        outline=int(sub["outline_width"]),
+        margin_lr=round(cfg.width * (100 - float(sub["max_width_pct"])) / 200),
+        margin_v=(margin_v if margin_v is not None
+                  else round(cfg.height * float(sub["bottom_margin_pct"]) / 100)),
+    )
+
+
+def build_card(text: str, duration: float, cfg, font: str, out: Path) -> Path | None:
+    """엔딩 카드 글자. 화면 한가운데에 놓는다."""
+    text = (text or "").strip()
+    if not text:
+        return None
+    lines = wrap_lines(text, int(cfg.subtitle["max_chars_per_line"]))
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(
+        _header(cfg, font, align=5, margin_v=0)
+        + f"Dialogue: 0,{_timestamp(0)},{_timestamp(duration)},Default,,0,0,0,,"
+        + r"\N".join(lines) + "\n",
+        encoding="utf-8")
+    return out
+
+
 def _estimated_times(events, duration):
     """낱말 시각을 못 쓸 때. 글자 수에 비례해 나눈다 — 어디까지나 어림이다."""
     weights = [max(1, sum(len(l) for l in ev)) for ev in events]
@@ -148,16 +179,7 @@ def build(text: str, duration: float, cfg, font: str, out: Path,
             + r"\N".join(ev)
         )
 
-    size, _ = ass_fontsize(font, float(sub["size"]))
-    header = _HEADER.format(
-        width=cfg.width, height=cfg.height,
-        font=font, size=size,
-        color=ass_color(sub["color"]),
-        outline_color=ass_color(sub["outline_color"]),
-        outline=int(sub["outline_width"]),
-        margin_lr=round(cfg.width * (100 - float(sub["max_width_pct"])) / 200),
-        margin_v=round(cfg.height * float(sub["bottom_margin_pct"]) / 100),
-    )
+    header = _header(cfg, font, align=2)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(header + "\n".join(body) + "\n", encoding="utf-8")
     return out, exact

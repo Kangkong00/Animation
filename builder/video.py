@@ -97,17 +97,53 @@ def fade_filter(duration: float, cfg: Config,
     return ",".join(parts)
 
 
+def vertical_graph(motion: str, cfg: Config, frames: int) -> str:
+    """가로 그림을 세로 화면에 담는다.
+
+    blur — 배경은 화면을 꽉 채우도록 확대해 흐리게 깔고, 그 위에 원본 비율
+           그대로의 그림을 얹는다. 화면은 꽉 차 보이는데 그림은 잘리지 않는다.
+    pad  — 위아래를 검게 비운다.
+    crop — 가운데만 남기고 좌우를 잘라낸다. 그림이 잘린다.
+    """
+    mode = cfg.shorts["background"]
+    w, h = cfg.width, cfg.height
+
+    if mode == "crop":
+        return "[0:v]" + image_chain(motion, cfg, frames) + "[v]"
+
+    # 앞에 얹을 그림은 가로폭에 맞춘 16:9
+    fg_h = (round(w * 9 / 16) // 2) * 2
+    inner = cfg.variant(resolution=[w, fg_h])
+    fg = image_chain(motion, inner, frames)
+
+    if mode == "pad":
+        bg = f"color=c=black:s={w}x{h}:d=1"
+        return (f"color=c=black:s={w}x{h}[bg];"
+                f"[0:v]{fg}[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2:shortest=1[v]")
+
+    sigma = float(cfg.shorts["blur_strength"])
+    return (
+        f"[0:v]split=2[bgsrc][fgsrc];"
+        f"[bgsrc]scale={w}:{h}:force_original_aspect_ratio=increase:flags=lanczos,"
+        f"crop={w}:{h},gblur=sigma={sigma},setsar=1[bg];"
+        f"[fgsrc]{fg}[fg];"
+        f"[bg][fg]overlay=(W-w)/2:(H-h)/2[v]"
+    )
+
+
 def build_clip(image: Path, audio_wav: Path, out: Path, cfg: Config,
-               motion: str, frames: int, extra_video: str = "") -> Path:
+               motion: str, frames: int, extra_video: str = "",
+               graph: str | None = None) -> Path:
     """컷 하나를 mp4 로. 이 파일만 따로 떼어 캡컷으로 가져가도 쓸 수 있다."""
     out.parent.mkdir(parents=True, exist_ok=True)
-    chain = image_chain(motion, cfg, frames)
+    graph = graph or ("[0:v]" + image_chain(motion, cfg, frames) + "[v]")
     if extra_video:
-        chain += "," + extra_video
+        # [v] 뒤에 필터를 더 붙인다
+        graph = graph[:graph.rindex("[v]")] + "," + extra_video + "[v]"
     run([
         "ffmpeg", "-y", "-v", "error",
         "-i", str(image), "-i", str(audio_wav),
-        "-filter_complex", f"[0:v]{chain}[v]",
+        "-filter_complex", graph,
         "-map", "[v]", "-map", "1:a",
         "-frames:v", str(frames),
         "-c:v", "libx264", "-preset", "medium", "-crf", "18",
@@ -115,6 +151,15 @@ def build_clip(image: Path, audio_wav: Path, out: Path, cfg: Config,
         "-c:a", "aac", "-b:a", "192k", "-ar", str(AUDIO_RATE), "-ac", str(AUDIO_CH),
         "-movflags", "+faststart", str(out),
     ], f"{out.stem} 클립 생성")
+    return out
+
+
+def black_frame(cfg: Config, out: Path) -> Path:
+    """엔딩 카드 바탕."""
+    out.parent.mkdir(parents=True, exist_ok=True)
+    run(["ffmpeg", "-y", "-v", "error", "-f", "lavfi",
+         "-i", f"color=c=black:s={cfg.size}", "-frames:v", "1", str(out)],
+        "엔딩 카드 바탕 만들기")
     return out
 
 

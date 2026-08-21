@@ -27,5 +27,18 @@
   "workers": 0,
   "image_naming": "strict",
   "bgm_duck": "medium",
-  "sfx_volume": 0.6
+  "sfx_volume": 0.6,
+  "ending_card_sec": 3.0,
+  "shorts": {
+    "resolution": [
+      1080,
+      1920
+    ],
+    "max_seconds": 40,
+    "background": "blur",
+    "blur_strength": 30,
+    "subtitle_size": 58,
+    "max_chars_per_line": 16,
+    "max_width_pct": 90
+  }
 }

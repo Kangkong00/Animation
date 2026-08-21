@@ -63,11 +63,17 @@ class Config:
         self.transition = data["transition"]
         self.transition_sec = float(data["transition_sec"])
         self.image_naming = data["image_naming"]
+        self.ending_card_sec = float(data["ending_card_sec"])
+        self.shorts = data["shorts"]
         self.supersample = SUPERSAMPLE_BY_QUALITY[data["motion_quality"]]
         self.workers = int(data["workers"]) or (os.cpu_count() or 2)
 
     def __getitem__(self, key):
         return self._d[key]
+
+    def variant(self, **overrides) -> "Config":
+        """일부 값만 바꾼 설정. 쇼츠처럼 해상도가 다른 판을 만들 때 쓴다."""
+        return Config(_merge(self._d, overrides))
 
     @property
     def size(self) -> str:
@@ -117,6 +123,14 @@ def load(path: str | Path = "config.json") -> Config:
             f"bgm_duck '{data['bgm_duck']}' 는 알 수 없는 값입니다. "
             "가능한 값: off, light, medium, strong"
         )
+    sh = data["shorts"]
+    if sh["background"] not in ("blur", "pad", "crop"):
+        raise ConfigError(
+            f"shorts.background '{sh['background']}' 는 알 수 없는 값입니다. "
+            "가능한 값: blur(흐린 배경), pad(검은 여백), crop(가운데를 잘라 채움)"
+        )
+    if float(sh["max_seconds"]) <= 0:
+        raise ConfigError("shorts.max_seconds 는 0보다 커야 합니다.")
     if data["image_naming"] not in ("strict", "ordered"):
         raise ConfigError(
             f"image_naming '{data['image_naming']}' 는 알 수 없는 값입니다. "

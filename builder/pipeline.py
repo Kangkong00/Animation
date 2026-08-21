@@ -13,6 +13,7 @@ from . import script as script_mod
 from . import fonts, tts, video
 from . import subtitle as subs
 from .media import probe_duration, probe_size, require_tools
+from .script import ScriptError as ScriptErrorLike
 
 
 @dataclass
@@ -43,6 +44,10 @@ class Paths:
     @property
     def final(self) -> Path:
         return self.out / "final.mp4"
+
+    @property
+    def shorts(self) -> Path:
+        return self.out / "shorts.mp4"
 
 
 @dataclass
@@ -103,7 +108,12 @@ def build(paths: Paths, engine: str = "edge", on_event=_noop,
     for cut in scr.cuts:
         cut.start_sec = t
         t += cut.duration_sec
-    total_sec = t
+
+    # 엔딩 카드는 마지막에 3초 붙는다. 배경음악이 여기까지 덮어야 한다.
+    card_text = scr.ending_card if cfg.ending_card_sec > 0 else None
+    card_frames = video.frames_for(cfg.ending_card_sec, cfg.fps) if card_text else 0
+    card_sec = card_frames / cfg.fps if card_text else 0.0
+    total_sec = t + card_sec
 
     # 2) 컷별 클립 — 컷끼리 서로 의존하지 않으므로 코어 수만큼 동시에 만든다
     pad_wavs = [video.pad_audio(c.audio, pad_dir / f"{c.stem}.wav", c.duration_sec)
@@ -119,8 +129,10 @@ def build(paths: Paths, engine: str = "edge", on_event=_noop,
             ass, cut.subtitle_exact = made
             filters.append(subs.filter_arg(ass))
         # 페이드는 자막 위에 건다. 화면 전체가 같이 어두워져야 한다.
-        fade = video.fade_filter(cut.duration_sec, cfg,
-                                 first=idx == 0, last=idx == total - 1)
+        fade = video.fade_filter(
+            cut.duration_sec, cfg, first=idx == 0,
+            # 엔딩 카드가 있으면 어둠으로 잠기는 건 카드 쪽이다
+            last=idx == total - 1 and not card_text)
         if fade:
             filters.append(fade)
         cut.clip = video.build_clip(
@@ -139,6 +151,24 @@ def build(paths: Paths, engine: str = "edge", on_event=_noop,
             on_event(stage="clip", i=done, total=total, label=cut.stem,
                      seconds=round(cut.duration_sec, 2))
 
+    # 2-b) 엔딩 카드
+    clips = [c.clip for c in scr.cuts]
+    if card_text:
+        on_event(stage="ending", total=total, seconds=round(card_sec, 2))
+        card_ass = subs.build_card(card_text, card_sec, cfg, font,
+                                   subs_dir / "ending.ass")
+        card_filters = [subs.filter_arg(card_ass)] if card_ass else []
+        card_fade = video.fade_filter(card_sec, cfg, first=False, last=True)
+        if card_fade:
+            card_filters.append(card_fade)
+        card_wav = video.silent_audio(pad_dir / "ending.wav", card_sec)
+        pad_wavs.append(card_wav)
+        clips.append(video.build_clip(
+            video.black_frame(cfg, paths.work / "ending_bg.png"),
+            card_wav, paths.clips / "ending.mp4", cfg, "zoom_in", card_frames,
+            extra_video=",".join(card_filters),
+        ))
+
     # 3) 배경음악·효과음
     narration = video.join_audio(pad_wavs, paths.work / "narration.wav", paths.work)
     bgm = audio_mod.find_bgm(paths.assets, scr.bgm)
@@ -154,12 +184,12 @@ def build(paths: Paths, engine: str = "edge", on_event=_noop,
 
     # 4) 합치기
     on_event(stage="concat", i=0, total=total)
-    video.concat([c.clip for c in scr.cuts], full_audio, paths.final, paths.work)
+    video.concat(clips, full_audio, paths.final, paths.work)
     on_event(stage="done", total=total, seconds=round(total_sec, 2))
 
     return Result(
         final=paths.final,
-        clips=[c.clip for c in scr.cuts],
+        clips=clips,
         audio=[c.audio for c in scr.cuts],
         total_sec=total_sec,
         elapsed_sec=time.time() - started,
@@ -167,6 +197,159 @@ def build(paths: Paths, engine: str = "edge", on_event=_noop,
         title=scr.title,
         bgm=bgm,
         sfx_count=len(sfx),
+    )
+
+
+def parse_cuts(spec: str, total: int) -> list[int]:
+    """'3-8' 이나 '3,4,7' 을 컷 번호로 푼다."""
+    nums: list[int] = []
+    for part in str(spec).replace(" ", "").split(","):
+        if not part:
+            continue
+        if "-" in part[1:]:
+            a, _, b = part.partition("-")
+            try:
+                lo, hi = int(a), int(b)
+            except ValueError:
+                raise ScriptErrorLike(f"컷 범위를 알아볼 수 없습니다: {part}")
+            if lo > hi:
+                lo, hi = hi, lo
+            nums.extend(range(lo, hi + 1))
+        else:
+            try:
+                nums.append(int(part))
+            except ValueError:
+                raise ScriptErrorLike(f"컷 번호를 알아볼 수 없습니다: {part}")
+
+    seen, out = set(), []
+    for n in nums:
+        if not 1 <= n <= total:
+            raise ScriptErrorLike(f"컷 {n} 은 없습니다. 대본은 1~{total} 컷입니다.")
+        if n not in seen:
+            seen.add(n)
+            out.append(n)
+    if not out:
+        raise ScriptErrorLike("쇼츠로 뽑을 컷을 지정하세요. 예: 3-8")
+    return out
+
+
+def build_shorts(paths: Paths, spec: str, engine: str = "edge",
+                 on_event=_noop, reuse_audio: bool = True) -> Result:
+    """고른 컷만 9:16 세로로 다시 만들어 쇼츠 한 편으로 잇는다.
+
+    롱폼에서 잘라내는 게 아니라 세로 화면에 맞춰 새로 그린다. 그래야 자막이
+    세로 화면에서도 읽을 만한 크기로 들어간다.
+    """
+    started = time.time()
+    require_tools()
+
+    cfg = config_mod.load(paths.config)
+    scr = script_mod.load(paths.script)
+    script_mod.attach_images(scr, paths.images, cfg.image_naming)
+    font, font_note = fonts.resolve(cfg.subtitle["font"])
+    if font_note:
+        on_event(stage="notice", message=font_note)
+
+    sh = cfg.shorts
+    vcfg = cfg.variant(
+        resolution=sh["resolution"],
+        subtitle={**cfg.subtitle,
+                  "size": sh["subtitle_size"],
+                  "max_chars_per_line": sh["max_chars_per_line"],
+                  "max_width_pct": sh["max_width_pct"]},
+    )
+
+    wanted = parse_cuts(spec, len(scr.cuts))
+    cap = float(sh["max_seconds"])
+
+    work = paths.work / "shorts"
+    pad_dir, subs_dir = work / "audio_pad", work / "subs"
+    for d in (paths.audio, work, pad_dir, subs_dir):
+        d.mkdir(parents=True, exist_ok=True)
+
+    picked, dropped, used = [], [], 0.0
+    for n in wanted:
+        cut = scr.cuts[n - 1]
+        mp3 = paths.audio / f"{cut.stem}.mp3"
+        if not (reuse_audio and mp3.exists() and mp3.stat().st_size > 0):
+            tts.synth(cut.narration, mp3, cfg.tts_voice, cfg.tts_rate,
+                      engine=engine, cut_label=f"컷 {cut.n}")
+        cut.audio = mp3
+        cut.words = tts.load_words(mp3)
+        cut.audio_sec = probe_duration(mp3)
+        cut.frames = video.frames_for(cut.audio_sec + cfg.cut_padding_sec, cfg.fps)
+        cut.duration_sec = cut.frames / cfg.fps
+
+        if picked and used + cut.duration_sec > cap:
+            dropped.append(cut.n)
+            continue
+        picked.append(cut)
+        used += cut.duration_sec
+
+    if dropped:
+        on_event(stage="notice", message=(
+            f"{cap:.0f}초를 넘어 컷 {', '.join(str(n) for n in dropped)} 은 뺐습니다. "
+            f"넣은 컷: {', '.join(str(c.n) for c in picked)}"))
+
+    total = len(picked)
+    on_event(stage="start", total=total, title=f"{scr.title} · 쇼츠", font=font)
+
+    pad_wavs = [video.pad_audio(c.audio, pad_dir / f"{c.stem}.wav", c.duration_sec)
+                for c in picked]
+
+    def make(idx: int):
+        cut = picked[idx]
+        made = subs.build(cut.subtitle, cut.duration_sec, vcfg, font,
+                          subs_dir / f"{cut.stem}.ass", words=cut.words)
+        filters = []
+        if made:
+            ass, cut.subtitle_exact = made
+            filters.append(subs.filter_arg(ass))
+        fade = video.fade_filter(cut.duration_sec, vcfg,
+                                 first=idx == 0, last=idx == total - 1)
+        if fade:
+            filters.append(fade)
+        clip = video.build_clip(
+            cut.image, pad_wavs[idx], work / f"{cut.stem}.mp4",
+            vcfg, cut.motion, cut.frames, extra_video=",".join(filters),
+            graph=video.vertical_graph(cut.motion, vcfg, cut.frames),
+        )
+        return idx, clip
+
+    clips: list[Path | None] = [None] * total
+    done = 0
+    with ThreadPoolExecutor(max_workers=cfg.workers) as pool:
+        for fut in as_completed([pool.submit(make, i) for i in range(total)]):
+            idx, clip = fut.result()
+            clips[idx] = clip
+            done += 1
+            on_event(stage="clip", i=done, total=total, label=picked[idx].stem,
+                     seconds=round(picked[idx].duration_sec, 2))
+
+    narration = video.join_audio(pad_wavs, work / "narration.wav", work)
+    bgm = audio_mod.find_bgm(paths.assets, scr.bgm)
+    sfx = [(audio_mod.find_sfx(paths.assets, c.sfx, c.n), c.start_sec)
+           for c in picked if c.sfx]
+    if bgm:
+        full_audio = audio_mod.mix(narration, work / "full_audio.wav",
+                                   cfg, used, bgm=bgm, sfx=[])
+    else:
+        full_audio = narration
+
+    on_event(stage="concat", i=0, total=total)
+    video.concat(clips, full_audio, paths.shorts, work)
+    on_event(stage="done", total=total, seconds=round(used, 2))
+
+    return Result(
+        final=paths.shorts,
+        clips=clips,
+        audio=[c.audio for c in picked],
+        total_sec=used,
+        elapsed_sec=time.time() - started,
+        cuts=picked,
+        title=f"{scr.title} · 쇼츠",
+        bgm=bgm,
+        sfx_count=0,
     )
 
 

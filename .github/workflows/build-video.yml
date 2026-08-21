@@ -10,6 +10,10 @@ on:
         options:
           - '실제 (input 폴더)'
           - '데모 (samples 폴더 · 도구 점검용)'
+      shorts_cuts:
+        description: '쇼츠로 뽑을 컷 (예: 3-8). 비워 두면 안 만듭니다'
+        type: string
+        default: ''
       check_only:
         description: '점검만 하고 끝내기 (이미지와 대본이 맞는지 40초 만에 확인)'
         type: boolean
@@ -84,6 +88,22 @@ jobs:
           path: |
             output/clips/
             output/audio/
+          retention-days: 30
+
+      - name: 쇼츠 뽑기
+        if: ${{ !inputs.check_only && inputs.shorts_cuts != '' }}
+        run: |
+          python3 build.py --shorts "${{ inputs.shorts_cuts }}" \
+            --images "${{ steps.src.outputs.images }}" \
+            --script "${{ steps.src.outputs.script }}"
+          cp output/shorts.mp4 "deliver/${{ steps.name.outputs.title }} 쇼츠.mp4"
+
+      - name: 쇼츠 올리기
+        if: ${{ !inputs.check_only && inputs.shorts_cuts != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: 쇼츠
+          path: deliver/*쇼츠.mp4
           retention-days: 30
 
       - name: 어떤 폰트로 자막을 그렸는지 확인

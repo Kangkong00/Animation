@@ -45,6 +45,10 @@ def make_reporter():
             if e.get("sfx"):
                 bits.append(f"효과음 {e['sfx']}개")
             print(f"\n  소리 섞는 중 — {', '.join(bits)}", flush=True)
+        elif stage == "notice":
+            print(f"  알림  {e['message']}")
+        elif stage == "ending":
+            print(f"\n  엔딩 카드  {e['seconds']:.1f}초")
         elif stage == "concat":
             print("  합치는 중...", flush=True)
     return report
@@ -60,6 +64,8 @@ def main() -> int:
                     help="음성 엔진 (기본 edge-tts)")
     ap.add_argument("--fresh", action="store_true", help="이미 만든 음성도 다시 생성")
     ap.add_argument("--check", action="store_true", help="입력 점검만 하고 종료")
+    ap.add_argument("--shorts", metavar="컷범위",
+                    help="고른 컷만 9:16 세로 쇼츠로. 예: --shorts 3-8")
     ap.add_argument("--voice-sample", action="store_true",
                     help="남성·여성 목소리 샘플만 생성")
     args = ap.parse_args()
@@ -97,8 +103,13 @@ def main() -> int:
               f"나레이션 {scr.total_narration_chars}자\n")
         if args.check:
             return 0
-        res = pipeline.build(paths, engine=args.tts, on_event=make_reporter(),
-                             reuse_audio=not args.fresh)
+        if args.shorts:
+            res = pipeline.build_shorts(paths, args.shorts, engine=args.tts,
+                                        on_event=make_reporter(),
+                                        reuse_audio=not args.fresh)
+        else:
+            res = pipeline.build(paths, engine=args.tts, on_event=make_reporter(),
+                                 reuse_audio=not args.fresh)
 
         print("\n" + "-" * 52)
         print(f"  완성      {res.final}")
