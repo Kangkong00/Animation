@@ -4,33 +4,171 @@
   "cuts": [
     {
       "n": 1,
-      "narration": "아무것도 없었습니다. 진짜로, 아무것도요.",
+      "_장면": "태초",
+      "narration": "",
       "motion": "zoom_in"
     },
     {
       "n": 2,
-      "narration": "하늘도 없고, 땅도 없고, 시간이라는 것조차 아직 태어나지 않았습니다.",
+      "_장면": "세상이 갈라지다",
+      "narration": "",
       "motion": "zoom_out"
     },
     {
       "n": 3,
-      "narration": "그 텅 빈 어둠의 이름이 카오스였습니다.",
-      "motion": "pan_left"
+      "_장면": "가이아, 눈을",
+      "narration": "",
+      "motion": "zoom_in"
     },
     {
       "n": 4,
-      "narration": "카오스에서 대지의 여신 가이아가 몸을 일으켰습니다.",
-      "motion": "pan_right"
-    },
-    {
-      "n": 5,
-      "narration": "가이아는 홀로 하늘을 낳았습니다. 그 하늘의 이름이 우라노스입니다.",
+      "_장면": "우라노스",
+      "narration": "",
       "motion": "pan_up"
     },
     {
+      "n": 5,
+      "_장면": "둘의 만남",
+      "narration": "",
+      "motion": "zoom_in"
+    },
+    {
       "n": 6,
-      "narration": "그리고 어머니의 몸 위에 올라탄 하늘은, 태어나는 자식들을 하나씩 땅 속 깊은 곳으로 밀어 넣기 시작했습니다.",
+      "_장면": "열두 남매",
+      "narration": "",
+      "motion": "zoom_out"
+    },
+    {
+      "n": 7,
+      "_장면": "다른 모습의",
+      "narration": "",
+      "motion": "zoom_out"
+    },
+    {
+      "n": 8,
+      "_장면": "내 자식이",
+      "narration": "",
       "motion": "pan_down"
+    },
+    {
+      "n": 9,
+      "_장면": "생매장",
+      "narration": "",
+      "motion": "pan_down"
+    },
+    {
+      "n": 10,
+      "_장면": "어머니의 눈",
+      "narration": "",
+      "motion": "zoom_in"
+    },
+    {
+      "n": 11,
+      "_장면": "소집",
+      "narration": "",
+      "motion": "zoom_out"
+    },
+    {
+      "n": 12,
+      "_장면": "낫",
+      "narration": "",
+      "motion": "pan_left"
+    },
+    {
+      "n": 13,
+      "_장면": "한 발",
+      "narration": "",
+      "motion": "zoom_in"
+    },
+    {
+      "n": 14,
+      "_장면": "“제가 하겠습니다”",
+      "narration": "",
+      "motion": "pan_up"
+    },
+    {
+      "n": 15,
+      "_장면": "침대 밑",
+      "narration": "",
+      "motion": "pan_down"
+    },
+    {
+      "n": 16,
+      "_장면": "번쩍임",
+      "narration": "",
+      "motion": "pan_up"
+    },
+    {
+      "n": 17,
+      "_장면": "힘을 잃은",
+      "narration": "",
+      "motion": "zoom_in"
+    },
+    {
+      "n": 18,
+      "_장면": "두 번째",
+      "narration": "",
+      "motion": "pan_right"
+    },
+    {
+      "n": 19,
+      "_장면": "땅속의 기다림",
+      "narration": "",
+      "motion": "pan_down"
+    },
+    {
+      "n": 20,
+      "_장면": "저주",
+      "narration": "",
+      "motion": "pan_left"
+    },
+    {
+      "n": 21,
+      "_장면": "약속 파기",
+      "narration": "",
+      "motion": "zoom_in"
+    },
+    {
+      "n": 22,
+      "_장면": "어머니가 찾아오다",
+      "narration": "",
+      "motion": "pan_up"
+    },
+    {
+      "n": 23,
+      "_장면": "첫아이",
+      "narration": "",
+      "motion": "zoom_in"
+    },
+    {
+      "n": 24,
+      "_장면": "삼키는 아버지",
+      "narration": "",
+      "motion": "pan_down"
+    },
+    {
+      "n": 25,
+      "_장면": "빈 요람",
+      "narration": "",
+      "motion": "zoom_in"
+    },
+    {
+      "n": 26,
+      "_장면": "돌덩이",
+      "narration": "",
+      "motion": "pan_right"
+    },
+    {
+      "n": 27,
+      "_장면": "크레타섬 동굴",
+      "narration": "",
+      "motion": "zoom_out"
+    },
+    {
+      "n": 28,
+      "_장면": "네 이름은",
+      "narration": "",
+      "motion": "zoom_in"
     }
   ],
   "ending_card": "아버지에게 삼켜진 다섯 남매는 아직 살아 있습니다. 다음 편, 신들의 전쟁."

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import re
+import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -72,6 +73,7 @@ def load(path: str | Path) -> Script:
         raise ScriptError("대본의 cuts 가 비어 있습니다.")
 
     cuts: list[Cut] = []
+    empty: list[int] = []
     for i, item in enumerate(raw["cuts"], start=1):
         n = int(item.get("n", i))
         if n != i:
@@ -81,7 +83,7 @@ def load(path: str | Path) -> Script:
             )
         narration = (item.get("narration") or "").strip()
         if not narration:
-            raise ScriptError(f"컷 {n}: narration 이 비어 있습니다.")
+            empty.append(n)
         motion = item.get("motion") or "zoom_in"
         if motion not in MOTIONS:
             raise ScriptError(
@@ -93,6 +95,13 @@ def load(path: str | Path) -> Script:
         subtitle = narration if raw_sub is None else raw_sub.strip()
         cuts.append(Cut(n=n, narration=narration, subtitle=subtitle,
                         motion=motion, sfx=item.get("sfx")))
+
+    if empty:
+        nums = ", ".join(str(n) for n in empty)
+        raise ScriptError(
+            f"나레이션이 비어 있는 컷: {nums}\n"
+            f"  ({len(empty)}개) 대본에서 이 컷들의 narration 을 채워 주세요."
+        )
 
     return Script(
         title=(raw.get("title") or "untitled").strip(),
@@ -106,9 +115,13 @@ def load(path: str | Path) -> Script:
 
 
 def natural_key(p: Path):
-    """IMG_2 가 IMG_10 보다 앞에 오도록. 단순 알파벳순이면 순서가 뒤집힌다."""
-    return [int(t) if t.isdigit() else t.lower()
-            for t in _NUM_RE.split(p.stem)]
+    """IMG_2 가 IMG_10 보다 앞에 오도록. 단순 알파벳순이면 순서가 뒤집힌다.
+
+    아이폰·아이패드에서 올린 한글 파일명은 자모가 분해된 채로 저장된다.
+    그대로 비교하면 정렬이 뒤틀리므로 먼저 합쳐 놓는다.
+    """
+    stem = unicodedata.normalize("NFC", p.stem)
+    return [int(t) if t.isdigit() else t.lower() for t in _NUM_RE.split(stem)]
 
 
 def _image_files(folder: Path) -> list[Path]:

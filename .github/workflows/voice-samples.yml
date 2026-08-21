@@ -1,5 +1,7 @@
 name: 목소리 들어보기
 
+run-name: 목소리 9가지 뽑기
+
 on:
   workflow_dispatch:
     inputs:

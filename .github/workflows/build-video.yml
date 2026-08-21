@@ -1,21 +1,24 @@
 name: 영상 만들기
 
+# 실행마다 다른 이름이 붙어야 목록에서 구분된다
+run-name: >-
+  ${{ inputs.check_only && '점검' || '조립' }} · ${{ inputs.mode }}${{
+  inputs.shorts != '' && format(' · 쇼츠 {0}', inputs.shorts) || '' }}
+
 on:
   workflow_dispatch:
     inputs:
       mode:
-        description: '무엇으로 만들까요'
+        description: '재료'
         type: choice
-        default: '실제 (input 폴더)'
-        options:
-          - '실제 (input 폴더)'
-          - '데모 (samples 폴더 · 도구 점검용)'
-      shorts_cuts:
-        description: '쇼츠로 뽑을 컷 (예: 3-8). 비워 두면 안 만듭니다'
+        default: 실제
+        options: [실제, 데모]
+      shorts:
+        description: '쇼츠 컷 · 예 3-8 · 안 만들면 비워 두기'
         type: string
         default: ''
       check_only:
-        description: '점검만 하고 끝내기 (이미지와 대본이 맞는지 40초 만에 확인)'
+        description: '점검만 하고 끝내기 · 40초'
         type: boolean
         default: false
 
@@ -30,7 +33,7 @@ jobs:
       - name: 어느 폴더로 만들지 정하기
         id: src
         run: |
-          if [[ "${{ inputs.mode }}" == 데모* ]]; then
+          if [[ "${{ inputs.mode }}" == "데모" ]]; then
             echo "images=samples/images"   >> "$GITHUB_OUTPUT"
             echo "script=samples/script.json" >> "$GITHUB_OUTPUT"
             echo "::notice::데모 모드 — samples 폴더로 만듭니다"
@@ -91,15 +94,15 @@ jobs:
           retention-days: 30
 
       - name: 쇼츠 뽑기
-        if: ${{ !inputs.check_only && inputs.shorts_cuts != '' }}
+        if: ${{ !inputs.check_only && inputs.shorts != '' }}
         run: |
-          python3 build.py --shorts "${{ inputs.shorts_cuts }}" \
+          python3 build.py --shorts "${{ inputs.shorts }}" \
             --images "${{ steps.src.outputs.images }}" \
             --script "${{ steps.src.outputs.script }}"
           cp output/shorts.mp4 "deliver/${{ steps.name.outputs.title }} 쇼츠.mp4"
 
       - name: 쇼츠 올리기
-        if: ${{ !inputs.check_only && inputs.shorts_cuts != '' }}
+        if: ${{ !inputs.check_only && inputs.shorts != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: 쇼츠
