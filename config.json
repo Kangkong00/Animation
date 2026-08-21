@@ -4,8 +4,8 @@
     1080
   ],
   "fps": 30,
-  "tts_voice": "ko-KR-InJoonNeural",
-  "tts_rate": "-5%",
+  "tts_voice": "ko-KR-SunHiNeural",
+  "tts_rate": "+4%",
   "tts_pitch": "+0Hz",
   "cut_padding_sec": 0.4,
   "transition": "dissolve",
