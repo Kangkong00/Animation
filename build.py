@@ -14,11 +14,15 @@ from pathlib import Path
 
 from builder import fonts, pipeline, subtitle, tts
 from builder.config import ConfigError
-from builder.media import MediaError
+from builder.media import MediaError, probe_duration
 from builder.script import ScriptError
 
 ROOT = Path(__file__).resolve().parent
-SAMPLE_LINE = "아무것도 없었습니다. 진짜로, 아무것도요. 하늘도, 땅도, 시간마저도."
+SAMPLE_LINE = (
+    "아무것도 없었습니다. 진짜로, 아무것도요. "
+    "하늘도 없고, 땅도 없고, 시간이라는 것조차 아직 태어나지 않았습니다. "
+    "그 텅 빈 어둠의 이름이 카오스였습니다."
+)
 
 STAGE_NAMES = {"tts": "음성 생성", "clip": "클립 생성", "concat": "합치기"}
 
@@ -81,12 +85,17 @@ def main() -> int:
 
     try:
         if args.voice_sample:
-            print("\n목소리 샘플을 만듭니다...\n")
+            print("\n한국어 목소리를 전부 뽑습니다. 잠시 걸립니다...\n")
             made = tts.make_voice_samples(paths.out / "voice_samples", SAMPLE_LINE)
-            for p in made:
-                print(f"  {p}")
-            print("\n두 파일을 들어 보고 마음에 드는 쪽 목소리 이름을")
-            print("config.json 의 tts_voice 에 넣으세요.\n")
+            print(f"  {'번호':<4} {'성별':<4} {'이름':<16} {'길이':>7}   설정값")
+            print("  " + "-" * 62)
+            for m in made:
+                sec = probe_duration(m["파일"])
+                print(f"  {m['번호']:<4} {m['성별']:<4} {m['이름']:<16} "
+                      f"{sec:>6.1f}초   {m['설정값']}")
+            print(f"\n  파일 위치: {paths.out / 'voice_samples'}")
+            print("  마음에 드는 목소리의 설정값을 config.json 의 tts_voice 에 넣으세요.")
+            print("  길이가 짧을수록 빨리 읽는 목소리입니다.\n")
             return 0
 
         print("\n입력 점검...")

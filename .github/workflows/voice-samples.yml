@@ -1,0 +1,63 @@
+name: 목소리 들어보기
+
+on:
+  workflow_dispatch:
+    inputs:
+      sample_text:
+        description: '읽어볼 문장 (비워 두면 1화 도입부를 읽습니다)'
+        type: string
+        default: ''
+
+jobs:
+  samples:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ffmpeg 준비
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - run: pip install -q -r requirements.txt
+
+      - name: 한국어 목소리 전부 뽑기
+        run: |
+          if [ -n "${{ inputs.sample_text }}" ]; then
+            python3 - <<'PY'
+          import pathlib, re, os
+          p = pathlib.Path("build.py"); s = p.read_text(encoding="utf-8")
+          text = os.environ["SAMPLE"].replace('"', "'")
+          s = re.sub(r'SAMPLE_LINE = \([^)]*\)', f'SAMPLE_LINE = "{text}"', s, count=1)
+          p.write_text(s, encoding="utf-8")
+          PY
+          fi
+          python3 build.py --voice-sample | tee voice-list.txt
+        env:
+          SAMPLE: ${{ inputs.sample_text }}
+
+      - name: 목소리 목록 요약
+        run: |
+          {
+            echo '## 한국어 목소리'
+            echo ''
+            echo '아래 **Artifacts** 에서 `목소리-샘플` 을 받아 차례로 들어보세요.'
+            echo '마음에 드는 목소리의 설정값을 `config.json` 의 `tts_voice` 에 넣으면 됩니다.'
+            echo ''
+            echo '```'
+            cat voice-list.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 목소리-샘플
+          path: |
+            output/voice_samples/*.mp3
+            voice-list.txt
+          retention-days: 30

@@ -170,13 +170,50 @@ def synth(text: str, out: Path, voice: str, rate: str,
     return out
 
 
-def make_voice_samples(outdir: Path, text: str, rate: str = "-5%") -> list[Path]:
-    """남성·여성 목소리로 같은 문장을 뽑아 비교용 파일을 만든다."""
+async def _list_korean() -> list[dict]:
+    import edge_tts
+
+    voices = await edge_tts.list_voices()
+    ko = [v for v in voices if str(v.get("Locale", "")).startswith("ko-")]
+    # 남성 먼저, 그 안에서는 이름순
+    return sorted(ko, key=lambda v: (v.get("Gender", ""), v.get("ShortName", "")))
+
+
+def korean_voices() -> list[dict]:
+    """마이크로소프트가 지금 제공하는 한국어 목소리를 그대로 받아 온다.
+
+    목록을 코드에 박아 두지 않는다. 목소리는 늘고 줄기 때문에, 물어봐서 쓴다.
+    """
+    try:
+        import edge_tts  # noqa: F401
+    except ImportError as e:
+        raise TTSError(
+            "edge-tts 가 설치되어 있지 않습니다.\n  설치: pip3 install edge-tts"
+        ) from e
+    try:
+        return asyncio.run(_list_korean())
+    except Exception as e:
+        raise TTSError(
+            f"목소리 목록을 받아오지 못했습니다: {type(e).__name__}: {e}\n"
+            "  인터넷 연결을 확인하세요."
+        ) from e
+
+
+def make_voice_samples(outdir: Path, text: str, rate: str = "-5%") -> list[dict]:
+    """한국어 목소리를 전부 같은 문장으로 뽑아 비교할 수 있게 한다.
+
+    파일 이름 앞에 번호를 붙여, 파일 앱에서 위에서부터 차례로 들으면 된다.
+    """
     outdir = Path(outdir)
     outdir.mkdir(parents=True, exist_ok=True)
+
     made = []
-    for label, voice in VOICES.items():
-        p = outdir / f"voice_{label}_{voice}.mp3"
-        synth(text, p, voice, rate, engine="edge", cut_label=f"목소리 샘플({label})")
-        made.append(p)
+    for i, v in enumerate(korean_voices(), start=1):
+        short = v["ShortName"]                      # ko-KR-InJoonNeural
+        name = short.split("-")[-1].replace("Neural", "")
+        sex = "남성" if v.get("Gender") == "Male" else "여성"
+        out = outdir / f"{i:02d}_{sex}_{name}.mp3"
+        synth(text, out, short, rate, engine="edge", cut_label=f"목소리 샘플({name})")
+        made.append({"번호": i, "성별": sex, "이름": name,
+                     "설정값": short, "파일": out})
     return made
