@@ -117,6 +117,8 @@ jobs:
           print('대체 알림 :', note or '없음 (설정한 폰트 그대로)')
           print('크기 보정 : ASS 1 =', round(subtitle.px_per_unit(font) or 0, 3), 'px')
           "
+          echo "--- 빌드 요약 ---"
+          cat output/summary.json
 
       - name: 요약
         if: ${{ !inputs.check_only }}

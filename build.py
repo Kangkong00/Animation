@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -133,6 +134,20 @@ def main() -> int:
         print(f"  컷별 클립 {paths.clips}")
         print(f"  컷별 음성 {paths.audio}")
         print("-" * 52 + "\n")
+
+        # 빌드 결과를 파일로도 남긴다. 로그를 뒤지지 않고 한눈에 보기 위해서다.
+        subbed = [c for c in res.cuts if c.subtitle.strip()]
+        (paths.out / "summary.json").write_text(json.dumps({
+            "제목": res.title,
+            "총 길이(초)": round(res.total_sec, 3),
+            "컷 수": len(res.cuts),
+            "처리 시간(초)": round(res.elapsed_sec, 1),
+            "자막 폰트": res.font,
+            "자막 시각 실측": sum(1 for c in subbed if c.subtitle_exact),
+            "자막 시각 어림": sum(1 for c in subbed if not c.subtitle_exact),
+            "배경음악": res.bgm.name if res.bgm else None,
+            "효과음 수": res.sfx_count,
+        }, ensure_ascii=False, indent=2), encoding="utf-8")
         return 0
 
     except (ScriptError, ConfigError, MediaError, tts.TTSError,

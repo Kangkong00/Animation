@@ -59,6 +59,7 @@ class Result:
     elapsed_sec: float = 0.0
     cuts: list[script_mod.Cut] = field(default_factory=list)
     title: str = ""
+    font: str = ""
     bgm: Path | None = None
     sfx_count: int = 0
 
@@ -195,6 +196,7 @@ def build(paths: Paths, engine: str = "edge", on_event=_noop,
         elapsed_sec=time.time() - started,
         cuts=scr.cuts,
         title=scr.title,
+        font=font,
         bgm=bgm,
         sfx_count=len(sfx),
     )
@@ -348,6 +350,7 @@ def build_shorts(paths: Paths, spec: str, engine: str = "edge",
         elapsed_sec=time.time() - started,
         cuts=picked,
         title=f"{scr.title} · 쇼츠",
+        font=font,
         bgm=bgm,
         sfx_count=0,
     )
