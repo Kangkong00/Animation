@@ -93,9 +93,13 @@ def build(paths: Paths, engine: str = "edge", on_event=_noop,
     # 1) 음성 생성 + 실제 길이 측정 → 컷 길이 결정
     for i, cut in enumerate(scr.cuts, start=1):
         mp3 = paths.audio / f"{cut.stem}.mp3"
-        if not (reuse_audio and mp3.exists() and mp3.stat().st_size > 0):
+        fresh_needed = not (reuse_audio and mp3.exists()
+                            and mp3.stat().st_size > 0
+                            and (engine != "edge" or tts.matches_settings(
+                                mp3, cfg.tts_voice, cfg.tts_rate, cfg.tts_pitch)))
+        if fresh_needed:
             tts.synth(cut.narration, mp3, cfg.tts_voice, cfg.tts_rate,
-                      engine=engine, cut_label=f"컷 {cut.n}")
+                      cfg.tts_pitch, engine=engine, cut_label=f"컷 {cut.n}")
         cut.audio = mp3
         cut.words = tts.load_words(mp3)
         cut.audio_sec = probe_duration(mp3)
@@ -278,9 +282,13 @@ def build_shorts(paths: Paths, spec: str, engine: str = "edge",
     for n in wanted:
         cut = scr.cuts[n - 1]
         mp3 = paths.audio / f"{cut.stem}.mp3"
-        if not (reuse_audio and mp3.exists() and mp3.stat().st_size > 0):
+        fresh_needed = not (reuse_audio and mp3.exists()
+                            and mp3.stat().st_size > 0
+                            and (engine != "edge" or tts.matches_settings(
+                                mp3, cfg.tts_voice, cfg.tts_rate, cfg.tts_pitch)))
+        if fresh_needed:
             tts.synth(cut.narration, mp3, cfg.tts_voice, cfg.tts_rate,
-                      engine=engine, cut_label=f"컷 {cut.n}")
+                      cfg.tts_pitch, engine=engine, cut_label=f"컷 {cut.n}")
         cut.audio = mp3
         cut.words = tts.load_words(mp3)
         cut.audio_sec = probe_duration(mp3)

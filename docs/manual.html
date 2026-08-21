@@ -1,0 +1,484 @@
+<title>신들의 사생활 빌더</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --ground:#0a0a0a; --raised:#161616; --sunk:#0f0f0f;
+  --line:#242424; --line-soft:#1c1c1c;
+  --ink:#ececec; --ink-dim:#a8b0ae; --ink-mute:#78827f;
+  --accent:#4DD9C6; --accent-dim:#2b7f74;
+  --warn:#d8a657;
+  --sans:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;
+  --mono:"IBM Plex Mono","SFMono-Regular",Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:var(--sans); font-weight:300; font-size:16px; line-height:1.75;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:760px;margin:0 auto;padding:64px 24px 120px}
+@media(max-width:600px){.wrap{padding:40px 18px 80px}}
+
+/* ─ 머리 ─ */
+.mast{display:flex;flex-direction:column;gap:18px;padding-bottom:36px}
+.eyebrow{
+  font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--accent);display:flex;align-items:center;gap:9px;font-weight:500;
+}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 0 3px rgba(77,217,198,.14),0 0 12px rgba(77,217,198,.5);flex:none}
+h1{
+  font-size:40px;line-height:1.18;font-weight:600;margin:0;letter-spacing:-.02em;
+  text-wrap:balance;
+}
+@media(max-width:600px){h1{font-size:30px}}
+.lede{font-size:17px;color:var(--ink-dim);margin:0;max-width:60ch;font-weight:300}
+
+/* ─ 흐름도 ─ */
+.flow{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);margin:38px 0 0;
+}
+.flow div{background:var(--raised);padding:18px 16px;display:flex;flex-direction:column;gap:6px}
+.flow b{font-size:14px;font-weight:600;color:var(--ink)}
+.flow span{font-size:12.5px;color:var(--ink-mute);line-height:1.55}
+.flow em{font-family:var(--mono);font-size:11px;color:var(--accent);font-style:normal;
+  font-variant-numeric:tabular-nums}
+@media(max-width:600px){.flow{grid-template-columns:1fr}}
+
+/* ─ 목차 ─ */
+nav{margin:44px 0 0;border-top:1px solid var(--line);padding-top:20px}
+nav ol{list-style:none;margin:0;padding:0;
+  display:grid;grid-template-columns:1fr 1fr;gap:2px 28px;counter-reset:toc}
+@media(max-width:600px){nav ol{grid-template-columns:1fr}}
+nav a{
+  display:flex;gap:12px;align-items:baseline;padding:6px 0;
+  color:var(--ink-dim);text-decoration:none;font-size:14.5px;border-bottom:1px solid transparent;
+}
+nav a:hover,nav a:focus-visible{color:var(--accent)}
+nav a::before{counter-increment:toc;content:counter(toc,decimal-leading-zero);
+  font-family:var(--mono);font-size:11px;color:var(--ink-mute);flex:none}
+
+/* ─ 절 ─ */
+section{margin-top:64px;scroll-margin-top:24px}
+h2{
+  font-size:25px;font-weight:600;letter-spacing:-.015em;margin:0 0 6px;
+  padding-bottom:14px;border-bottom:1px solid var(--line);text-wrap:balance;
+}
+h3{font-size:16.5px;font-weight:600;margin:34px 0 8px;color:var(--ink)}
+h4{font-size:14px;font-weight:600;margin:22px 0 6px;color:var(--ink-dim)}
+p{margin:12px 0;max-width:66ch}
+strong{font-weight:600;color:#fff}
+a{color:var(--accent)}
+
+/* ─ 조각 ─ */
+code{font-family:var(--mono);font-size:.86em;background:var(--sunk);
+  border:1px solid var(--line);border-radius:3px;padding:1.5px 6px;color:var(--accent);
+  white-space:nowrap}
+pre{background:var(--sunk);border:1px solid var(--line);padding:16px 18px;margin:16px 0;
+  overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.7;color:var(--ink-dim)}
+pre code{background:none;border:0;padding:0;color:inherit;white-space:pre}
+.k{color:var(--accent)}
+.c{color:var(--ink-mute)}
+
+/* ─ 차례 있는 단계 ─ */
+.steps{list-style:none;margin:20px 0;padding:0;counter-reset:s}
+.steps>li{position:relative;padding:0 0 26px 34px;border-left:1px solid var(--line);
+  margin-left:5px}
+.steps>li:last-child{border-left-color:transparent;padding-bottom:0}
+.steps>li::before{
+  counter-increment:s;content:counter(s);position:absolute;left:-11px;top:0;
+  width:21px;height:21px;border-radius:50%;background:var(--raised);
+  border:1px solid var(--line);color:var(--accent);
+  font-family:var(--mono);font-size:10.5px;display:flex;align-items:center;justify-content:center;
+}
+.steps h3{margin:0 0 4px;font-size:15.5px}
+.steps p{margin:4px 0;font-size:14.5px}
+.dur{font-family:var(--mono);font-size:11px;color:var(--ink-mute);
+  font-variant-numeric:tabular-nums;margin-left:8px}
+
+/* ─ 표 ─ */
+.tw{overflow-x:auto;margin:18px 0;border:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:440px}
+th{text-align:left;font-weight:500;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-mute);padding:11px 14px;background:var(--raised);
+  border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid var(--line-soft);color:var(--ink-dim);
+  vertical-align:top;line-height:1.6}
+tr:last-child td{border-bottom:0}
+td:first-child{color:var(--ink);white-space:nowrap}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;
+  color:var(--accent);white-space:nowrap}
+
+/* ─ 주의 ─ */
+.note{border:1px solid var(--line);border-left:2px solid var(--accent-dim);
+  background:var(--raised);padding:14px 18px;margin:20px 0;font-size:14.5px;color:var(--ink-dim)}
+.note.warn{border-left-color:var(--warn)}
+.note b{color:var(--ink);font-weight:600}
+.note :is(p):first-child{margin-top:0}
+.note :is(p):last-child{margin-bottom:0}
+
+ul{padding-left:20px;margin:12px 0;max-width:66ch}
+li{margin:6px 0}
+hr{border:0;border-top:1px solid var(--line);margin:56px 0}
+footer{margin-top:72px;padding-top:22px;border-top:1px solid var(--line);
+  font-size:13px;color:var(--ink-mute)}
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow"><span class="dot"></span>제작 설명서</div>
+  <h1>신들의 사생활 빌더</h1>
+  <p class="lede">그림 28장과 대본 한 장을 올리면 나레이션·자막·배경음악이 붙은
+  완성본이 나옵니다. 아이패드만 있으면 됩니다.</p>
+</header>
+
+<div class="flow">
+  <div><b>올린다</b><span>이미지와 대본을 GitHub에</span><em>3분</em></div>
+  <div><b>기다린다</b><span>서버가 조립합니다. 기기를 꺼도 됩니다</span><em>4~6분</em></div>
+  <div><b>받는다</b><span>완성본 mp4와 컷별 클립</span><em>1분</em></div>
+</div>
+
+<nav>
+  <ol>
+    <li><a href="#voice">목소리 고르기</a></li>
+    <li><a href="#episode">편당 작업 순서</a></li>
+    <li><a href="#script">대본 쓰는 법</a></li>
+    <li><a href="#images">이미지 준비</a></li>
+    <li><a href="#audio">배경음악과 효과음</a></li>
+    <li><a href="#shorts">쇼츠 뽑기</a></li>
+    <li><a href="#config">설정값 전체</a></li>
+    <li><a href="#output">결과물이 남는 곳</a></li>
+    <li><a href="#trouble">막혔을 때</a></li>
+    <li><a href="#desktop">컴퓨터에서 쓰기</a></li>
+  </ol>
+</nav>
+
+<section id="voice">
+<h2>목소리 고르기</h2>
+<p>처음 한 번만 하면 됩니다. 정해두면 이후 모든 편에 같은 목소리가 쓰입니다.</p>
+<pre><code>Actions 탭 → <span class="k">목소리 들어보기</span> → Run workflow</code></pre>
+<p>마이크로소프트가 제공하는 한국어 목소리는 <strong>세 개뿐</strong>입니다. 그래서
+목소리마다 <strong>말 속도와 음높이를 바꾼 세 가지 톤</strong>을 함께 뽑아
+<strong>모두 아홉 가지</strong>를 들려줍니다. 같은 목소리라도 낮고 느리게 읽으면
+꽤 다르게 들립니다.</p>
+<div class="tw"><table>
+<thead><tr><th>톤</th><th class="num">속도</th><th class="num">음높이</th><th>느낌</th></tr></thead>
+<tbody>
+<tr><td>기본</td><td class="num">-5%</td><td class="num">+0Hz</td><td>표준</td></tr>
+<tr><td>낮고 느리게</td><td class="num">-14%</td><td class="num">-10Hz</td><td>무게가 실립니다. 신화 나레이션에 어울립니다</td></tr>
+<tr><td>조금 빠르게</td><td class="num">+4%</td><td class="num">+0Hz</td><td>가볍고 진행이 빠릅니다</td></tr>
+</tbody></table></div>
+<p>목록을 코드에 박아두지 않고 매번 물어보기 때문에, 목소리가 새로 나오면 자동으로
+후보에 들어옵니다.</p>
+<p>끝나면 <b>Artifacts</b>에서 <code>목소리-샘플</code>을 받으세요. 파일 이름이
+<code>01_남성_InJoon.mp3</code> 처럼 번호순이라 위에서부터 차례로 들으면 됩니다.
+읽는 데 걸린 시간도 함께 나오는데, <strong>짧을수록 빨리 읽는 목소리</strong>입니다.</p>
+<p>실행 화면 요약에 번호마다 넣을 세 줄이 그대로 나옵니다.
+<code>config.json</code>에 옮겨 적으면 끝입니다.</p>
+<pre><code>"tts_voice": <span class="k">"ko-KR-InJoonNeural"</span>,
+"tts_rate":  <span class="k">"-14%"</span>,   <span class="c">← 말 속도. 음수가 느림</span>
+"tts_pitch": <span class="k">"-10Hz"</span>   <span class="c">← 음높이. 음수가 낮음</span></code></pre>
+<div class="note"><p>목소리나 톤을 바꾸면 <b>다음 조립 때 음성이 자동으로 다시
+만들어집니다.</b> 설정만 고치고 예전 음성이 그대로 쓰이는 일은 없습니다.</p></div>
+<div class="note"><p>읽어볼 문장을 직접 넣을 수도 있습니다. 실제 1화 도입부를 넣어보면
+그 목소리가 이 채널에 맞는지 더 정확히 판단됩니다.</p></div>
+</section>
+
+<section id="episode">
+<h2>편당 작업 순서</h2>
+<p>2화부터는 이 다섯 단계만 반복합니다. 코드는 건드리지 않습니다.</p>
+<ol class="steps">
+  <li>
+    <h3>이미지 올리기<span class="dur">약 2분</span></h3>
+    <p>사파리에서 저장소를 열고 <code>input/images</code> 폴더로 들어갑니다.</p>
+    <pre><code>Add file → Upload files → 사진 28장 선택 → Commit changes</code></pre>
+    <p>지난 편 이미지가 남아 있으면 먼저 지웁니다.</p>
+  </li>
+  <li>
+    <h3>대본 넣기<span class="dur">약 1분</span></h3>
+    <p><code>input/script.json</code>을 열고 연필 아이콘을 눌러 내용을 갈아 끼운 뒤
+    <b>Commit changes</b>.</p>
+  </li>
+  <li>
+    <h3>점검부터 한 번<span class="dur">40초</span></h3>
+    <pre><code>Actions → <span class="k">영상 만들기</span> → Run workflow
+  점검만 하고 끝내기  <span class="k">☑</span></code></pre>
+    <p>이미지와 대본이 맞는지, 빠진 번호는 없는지 40초 만에 알려줍니다.
+    6분짜리 조립을 돌려놓고 3분 뒤에 오류를 보는 것보다 낫습니다.</p>
+  </li>
+  <li>
+    <h3>조립<span class="dur">4~6분</span></h3>
+    <p>체크를 풀고 다시 <b>Run workflow</b>. 쇼츠도 같이 뽑으려면
+    <b>쇼츠로 뽑을 컷</b> 칸에 <code>3-8</code>처럼 넣습니다.</p>
+    <p>이 동안 아이패드를 꺼도 됩니다. 서버에서 도는 작업입니다.</p>
+  </li>
+  <li>
+    <h3>받기<span class="dur">약 1분</span></h3>
+    <p>실행 화면 맨 아래 <b>Artifacts</b>에서 <code>완성본</code>을 받습니다.
+    zip이라 파일 앱에서 한 번 누르면 풀립니다.</p>
+  </li>
+</ol>
+<div class="note"><p><b>Actions 탭이 안 보이면</b> 사파리 주소창 왼쪽
+<code>ᴀA</code> → 데스크탑용 웹사이트 요청.</p></div>
+</section>
+
+<section id="script">
+<h2>대본 쓰는 법</h2>
+<p><code>input/script.json</code> 한 파일입니다.</p>
+<pre><code>{
+  <span class="k">"title"</span>: "1화 아버지를 삼킨 아들, 아들을 삼킨 아버지",
+  <span class="k">"accent_color"</span>: "#4DD9C6",
+  <span class="k">"bgm"</span>: "bgm.mp3",
+  <span class="k">"cuts"</span>: [
+    {
+      <span class="k">"n"</span>: 1,
+      <span class="k">"narration"</span>: "아무것도 없었습니다. 진짜로, 아무것도요.",
+      <span class="k">"motion"</span>: "zoom_in"
+    },
+    {
+      <span class="k">"n"</span>: 2,
+      <span class="k">"narration"</span>: "그 텅 빈 어둠의 이름이 카오스였습니다.",
+      <span class="k">"motion"</span>: "pan_left",
+      <span class="k">"sfx"</span>: "thunder.mp3"
+    }
+  ],
+  <span class="k">"ending_card"</span>: "다음 편, 신들의 전쟁."
+}</code></pre>
+
+<h3>길이 계산</h3>
+<p>컷 길이는 고정이 아닙니다. 나레이션 음성의 <strong>실제 길이를 재서</strong> 여백
+0.4초를 더한 값이 그 컷의 길이가 됩니다. 말이 끝나면 화면이 넘어갑니다.</p>
+<p>대본을 쓸 때는 <strong>글자 하나당 0.2초</strong>로 잡으면 맞습니다.</p>
+<div class="tw"><table>
+<thead><tr><th>대본 분량</th><th class="num">영상 길이</th></tr></thead>
+<tbody>
+<tr><td>1,000자</td><td class="num">약 3분 20초</td></tr>
+<tr><td>1,500자</td><td class="num">약 5분 00초</td></tr>
+<tr><td>2,000자</td><td class="num">약 6분 40초</td></tr>
+</tbody></table></div>
+<p>엔딩 카드 3초가 여기에 더 붙습니다.</p>
+
+<h3>자막</h3>
+<p><code>narration</code>만 쓰면 됩니다. <strong>읽는 문장이 그대로 자막이 됩니다.</strong>
+자막이 뜨는 시각은 어림잡는 게 아니라, 음성을 만들 때 받아오는
+<strong>낱말별 발음 시각</strong>에 맞춥니다.</p>
+<p>한 줄 20자를 넘으면 어절 단위로 줄바꿈하고, 두 줄을 넘으면 자막을 두 번에 나눠
+띄웁니다. 이미지는 건드리지 않습니다.</p>
+<div class="note warn"><p><b>자막을 따로 줄여 쓰면</b> <code>subtitle</code> 항목을 넣을 수
+있지만, 그러면 어느 낱말에 해당하는지 알 수 없어 <b>자막 시각이 글자 수 어림 계산으로
+떨어집니다.</b> 점검 단계에서 어느 컷이 그런지 알려줍니다.</p></div>
+
+<h3>카메라 움직임</h3>
+<div class="tw"><table>
+<thead><tr><th>값</th><th>화면</th><th>쓸 만한 데</th></tr></thead>
+<tbody>
+<tr><td><code>zoom_in</code></td><td>서서히 확대</td><td>긴장이 올라갈 때, 인물에 집중</td></tr>
+<tr><td><code>zoom_out</code></td><td>서서히 축소</td><td>전체가 드러날 때, 장면 전환</td></tr>
+<tr><td><code>pan_left</code></td><td>왼쪽으로 이동</td><td>넓은 풍경, 시선 이동</td></tr>
+<tr><td><code>pan_right</code></td><td>오른쪽으로 이동</td><td>같은 용도, 방향만 반대</td></tr>
+<tr><td><code>pan_up</code></td><td>위로 이동</td><td>하늘·높이를 보여줄 때</td></tr>
+<tr><td><code>pan_down</code></td><td>아래로 이동</td><td>땅속·추락</td></tr>
+</tbody></table></div>
+<p>같은 방향을 계속 쓰면 단조롭습니다. 확대와 축소를 번갈아 두면 화면이 살아납니다.</p>
+
+<h3>선택 항목</h3>
+<div class="tw"><table>
+<thead><tr><th>이름</th><th>뜻</th></tr></thead>
+<tbody>
+<tr><td><code>title</code></td><td>완성본 파일 이름이 됩니다</td></tr>
+<tr><td><code>ending_card</code></td><td>마지막에 검은 화면 3초로 붙습니다. 없으면 안 붙습니다</td></tr>
+<tr><td><code>bgm</code></td><td>배경음악 파일 이름. 없으면 <code>input/bgm.*</code>를 찾습니다</td></tr>
+<tr><td><code>sfx</code></td><td>그 컷이 시작할 때 나는 효과음</td></tr>
+<tr><td><code>subtitle</code></td><td>자막을 따로 쓸 때만. 위 경고를 보세요</td></tr>
+<tr><td><code>accent_color</code></td><td>채널 강조색. 지금은 기록용입니다</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="images">
+<h2>이미지 준비</h2>
+<h3>파일 이름</h3>
+<p>기본은 <code>cut01.png</code> ~ <code>cut28.png</code>입니다. 번호가 곧 등장 순서이고,
+<strong>번호가 하나라도 빠지면 에러로 멈춥니다.</strong> 조용히 건너뛰지 않습니다.</p>
+<p>사진앱에서 <code>IMG_4821.png</code> 같은 이름 그대로 올리고 싶으면
+<code>config.json</code>의 <code>image_naming</code>을 <code>"ordered"</code>로 바꾸세요.
+파일명을 숫자까지 따져 정렬한 순서대로 1번 컷부터 배정합니다
+(<code>IMG_2</code>가 <code>IMG_10</code>보다 앞).</p>
+<p>이 경우 <strong>이미지 개수와 대본 컷 수가 정확히 같아야</strong> 하고, 어떤 그림이
+몇 번 컷이 되었는지 점검 단계에서 표로 보여줍니다. 반드시 한 번 훑어보세요.</p>
+<pre><code>컷  1  ←  IMG_7.png
+컷  2  ←  IMG_14.png
+컷  3  ←  IMG_21.png</code></pre>
+
+<h3>형식과 비율</h3>
+<ul>
+<li>png · jpg · webp를 씁니다</li>
+<li><strong>HEIC는 열 수 없습니다.</strong> 아이폰 사진의 기본 형식입니다.
+설정 → 카메라 → 포맷 → <b>높은 호환성</b>으로 바꾸거나, 올리기 전에 PNG로 저장하세요.
+섞여 있으면 조립을 시작하지 않고 파일 이름을 알려줍니다</li>
+<li>이미지를 자르거나 늘리지 않습니다. 16:9가 아니면 검은 여백이 들어가고,
+점검 단계에서 어느 컷인지 알려줍니다</li>
+<li>1920×1080 이상을 권합니다. 카메라가 8% 확대되므로 작은 그림은 흐려집니다</li>
+</ul>
+</section>
+
+<section id="audio">
+<h2>배경음악과 효과음</h2>
+<h3>배경음악</h3>
+<p><code>input/</code> 폴더에 <code>bgm.mp3</code>라는 이름으로 올리면 자동으로 깔립니다.
+<code>.m4a .wav .ogg .flac .aac</code>도 됩니다. 다른 이름을 쓰려면 대본의
+<code>bgm</code> 항목에 파일명을 적으세요.</p>
+<p>영상보다 짧으면 <strong>반복해서 채웁니다.</strong> 볼륨은 15%이고, 나레이션이
+나오는 동안 <strong>스스로 더 작아집니다</strong>(더킹). 말이 끝나면 다시 올라옵니다.</p>
+<div class="tw"><table>
+<thead><tr><th>bgm_duck</th><th>나레이션 중 낮아지는 정도</th></tr></thead>
+<tbody>
+<tr><td><code>light</code></td><td>4dB — 음악을 살리고 싶을 때</td></tr>
+<tr><td><code>medium</code></td><td>8dB — 기본값</td></tr>
+<tr><td><code>strong</code></td><td>12dB — 말이 가장 또렷해집니다</td></tr>
+</tbody></table></div>
+
+<h3>효과음</h3>
+<p><code>input/sfx/</code> 폴더를 만들어 파일을 넣고, 대본의 해당 컷에 이름을 적습니다.</p>
+<pre><code>{ <span class="k">"n"</span>: 5, <span class="k">"narration"</span>: "…", <span class="k">"motion"</span>: "zoom_in", <span class="k">"sfx"</span>: "thunder.mp3" }</code></pre>
+<p>그 컷이 <strong>시작하는 순간</strong>에 재생됩니다. 볼륨은 <code>sfx_volume</code>
+(기본 0.6)으로 조절합니다.</p>
+<p>첫 1초는 어둠에서 밝아지고, 마지막 2초는 어둠으로 잠깁니다.</p>
+</section>
+
+<section id="shorts">
+<h2>쇼츠 뽑기</h2>
+<p>롱폼에서 고른 구간만 9:16 세로로 <strong>다시 만들어</strong> 냅니다. 잘라내는 게
+아니라 세로 화면 기준으로 새로 그리기 때문에 자막이 읽을 만한 크기로 들어갑니다.</p>
+<pre><code>Actions → 영상 만들기 → Run workflow
+  쇼츠로 뽑을 컷   <span class="k">3-8</span></code></pre>
+<p><code>3-8</code>처럼 범위로도, <code>3,5,9</code>처럼 하나씩도 됩니다.
+40초(<code>shorts.max_seconds</code>)를 넘으면 넘치는 컷은 빼고 어느 컷이 빠졌는지
+알려줍니다. 음성은 롱폼에서 만든 것을 다시 쓰므로 빠릅니다.</p>
+<div class="tw"><table>
+<thead><tr><th>shorts.background</th><th>가로 그림을 세로에 담는 방식</th></tr></thead>
+<tbody>
+<tr><td><code>blur</code></td><td>배경을 흐리게 깔고 그 위에 원본. 화면이 꽉 차면서 그림은 안 잘립니다 <b>(기본)</b></td></tr>
+<tr><td><code>pad</code></td><td>위아래를 검게 비웁니다</td></tr>
+<tr><td><code>crop</code></td><td>가운데만 남기고 좌우를 잘라냅니다. <b>그림이 잘립니다</b></td></tr>
+</tbody></table></div>
+</section>
+
+<section id="config">
+<h2>설정값 전체</h2>
+<p><code>config.json</code> 하나에 모여 있습니다. 코드는 건드릴 일이 없습니다.</p>
+<div class="tw"><table>
+<thead><tr><th>이름</th><th class="num">기본값</th><th>뜻</th></tr></thead>
+<tbody>
+<tr><td><code>resolution</code></td><td class="num">1920×1080</td><td>완성본 해상도</td></tr>
+<tr><td><code>fps</code></td><td class="num">30</td><td>초당 프레임</td></tr>
+<tr><td><code>tts_voice</code></td><td class="num">InJoon</td><td>목소리</td></tr>
+<tr><td><code>tts_rate</code></td><td class="num">-5%</td><td>말 속도. 음수가 느림</td></tr>
+<tr><td><code>tts_pitch</code></td><td class="num">+0Hz</td><td>음높이. 음수가 낮음</td></tr>
+<tr><td><code>cut_padding_sec</code></td><td class="num">0.4</td><td>말이 끝난 뒤 여백</td></tr>
+<tr><td><code>motion_strength</code></td><td class="num">1.08</td><td>카메라 움직임 크기. 8% 확대. <b>1.15 초과 시 실행 거부</b></td></tr>
+<tr><td><code>motion_quality</code></td><td class="num">max</td><td><code>max</code> 가장 부드러움 · <code>smooth</code> 중간 · <code>fast</code> 빠르지만 미세하게 튐</td></tr>
+<tr><td><code>image_naming</code></td><td class="num">strict</td><td><code>strict</code> cut01 규칙 · <code>ordered</code> 파일명 순서</td></tr>
+<tr><td><code>workers</code></td><td class="num">0</td><td>동시에 만들 클립 수. 0이면 코어 수만큼</td></tr>
+<tr><td><code>subtitle.size</code></td><td class="num">64</td><td>자막 크기(픽셀). 실측 보정되어 있습니다</td></tr>
+<tr><td><code>subtitle.max_chars_per_line</code></td><td class="num">20</td><td>한 줄 최대 글자</td></tr>
+<tr><td><code>subtitle.bottom_margin_pct</code></td><td class="num">12</td><td>화면 아래에서 띄우는 비율</td></tr>
+<tr><td><code>subtitle.outline_width</code></td><td class="num">3</td><td>검은 외곽선 두께</td></tr>
+<tr><td><code>bgm_volume</code></td><td class="num">0.15</td><td>배경음악 볼륨</td></tr>
+<tr><td><code>bgm_duck</code></td><td class="num">medium</td><td>나레이션 중 음악을 낮추는 정도</td></tr>
+<tr><td><code>sfx_volume</code></td><td class="num">0.6</td><td>효과음 볼륨</td></tr>
+<tr><td><code>fade_in_sec</code></td><td class="num">1.0</td><td>첫 컷이 밝아지는 시간</td></tr>
+<tr><td><code>fade_out_sec</code></td><td class="num">2.0</td><td>마지막이 어두워지는 시간</td></tr>
+<tr><td><code>ending_card_sec</code></td><td class="num">3.0</td><td>엔딩 카드 길이. 0이면 안 붙습니다</td></tr>
+<tr><td><code>shorts.max_seconds</code></td><td class="num">40</td><td>쇼츠 최대 길이</td></tr>
+</tbody></table></div>
+<div class="note warn"><p><b>motion_strength를 1.15 넘게 두지 마세요.</b> 정지 이미지가
+흔들려 보입니다. 넘기면 조립 자체를 거부합니다.</p></div>
+</section>
+
+<section id="output">
+<h2>결과물이 남는 곳</h2>
+<div class="tw"><table>
+<thead><tr><th>Artifact</th><th>내용</th></tr></thead>
+<tbody>
+<tr><td><code>완성본</code></td><td>유튜브에 올릴 mp4 하나. 대본 제목이 파일 이름이 됩니다</td></tr>
+<tr><td><code>컷별-클립과-음성</code></td><td>컷별 개별 클립(mp4)과 나레이션(mp3)</td></tr>
+<tr><td><code>쇼츠</code></td><td>세로 mp4. 쇼츠를 요청했을 때만</td></tr>
+</tbody></table></div>
+<p><strong>컷별 클립을 남기는 이유</strong>는 이 도구가 실패해도 작업이 0이 되지 않게
+하기 위해서입니다. 완성본이 마음에 안 들면 그 클립들을 캡컷으로 가져가 손으로
+이어 붙일 수 있습니다.</p>
+<p>실행 화면 위쪽 요약에 총 길이·컷 수·자막 폰트가 표시되고,
+<code>summary.json</code>에는 자막 시각이 낱말 단위로 잡혔는지까지 기록됩니다.</p>
+</section>
+
+<section id="trouble">
+<h2>막혔을 때</h2>
+<p>오류는 전부 한국어로, 무엇을 어떻게 고치면 되는지까지 나옵니다.</p>
+
+<h4>이미지가 없는 컷: cut07</h4>
+<p>대본에는 7번 컷이 있는데 <code>cut07</code> 이미지가 없습니다. 번호를 확인하세요.</p>
+
+<h4>HEIC 형식은 열 수 없습니다</h4>
+<p>아이폰 사진입니다. 설정 → 카메라 → 포맷 → 높은 호환성으로 바꾸거나 PNG로 저장해
+다시 올리세요.</p>
+
+<h4>이미지 파일명 규칙에 맞지 않습니다</h4>
+<p><code>cut01.png</code> 형식이 아닙니다. 이름을 바꾸기 어려우면
+<code>image_naming</code>을 <code>"ordered"</code>로 두세요.</p>
+
+<h4>대본 JSON 형식 오류</h4>
+<p>쉼표가 빠졌거나 따옴표가 안 닫혔습니다. 오류 메시지에 몇 번째 줄인지 나옵니다.</p>
+
+<h4>컷 N 음성 생성이 3회 모두 실패했습니다</h4>
+<p>음성 서버 연결 문제입니다. 잠시 뒤 다시 실행하세요. <strong>이미 만들어진 음성은
+그대로 재사용</strong>되므로 처음부터 다시 하지 않습니다.</p>
+
+<h4>motion_strength가 너무 큽니다</h4>
+<p>1.15 이하로 낮추세요.</p>
+
+<h4>컷 2, 4는 자막을 나레이션과 다르게 썼습니다</h4>
+<p>오류가 아니라 알림입니다. 그대로 진행되지만 자막 시각이 어림 계산이 됩니다.
+정확히 맞추려면 대본에서 <code>subtitle</code>을 빼세요.</p>
+
+<div class="note"><p>그 밖의 문제는 실행 화면의 빨간 단계를 눌러 마지막 몇 줄을
+확인하세요. 조립이 중간에 멈춰도 그때까지 만들어진 음성과 클립은 남습니다.</p></div>
+</section>
+
+<section id="desktop">
+<h2>컴퓨터에서 쓰기</h2>
+<p>윈도우·맥·리눅스에서 직접 돌릴 수도 있습니다. 결과물은 완전히 같습니다.</p>
+<pre><code><span class="c"># 처음 한 번만</span>
+sudo apt-get install -y ffmpeg fonts-noto-cjk   <span class="c"># mac: brew install ffmpeg</span>
+pip3 install -r requirements.txt
+
+<span class="c"># 매번</span>
+python3 build.py --check          <span class="c"># 이미지와 대본 점검</span>
+python3 build.py                  <span class="c"># 조립</span>
+python3 build.py --shorts 3-8     <span class="c"># 쇼츠</span>
+python3 build.py --voice-sample   <span class="c"># 목소리 전부 뽑기</span></code></pre>
+<div class="tw"><table>
+<thead><tr><th>옵션</th><th>뜻</th></tr></thead>
+<tbody>
+<tr><td><code>--check</code></td><td>점검만 하고 끝냅니다</td></tr>
+<tr><td><code>--fresh</code></td><td>이미 만든 음성도 다시 만듭니다</td></tr>
+<tr><td><code>--shorts 3-8</code></td><td>고른 컷만 세로 쇼츠로</td></tr>
+<tr><td><code>--images</code> <code>--script</code></td><td>다른 폴더로 돌릴 때</td></tr>
+</tbody></table></div>
+<p>결과는 <code>output/final.mp4</code>, 컷별 클립은 <code>output/clips/</code>,
+음성은 <code>output/audio/</code>에 남습니다. 다시 실행하면 이미 만든 음성은
+건너뜁니다.</p>
+<h3>도구만 점검하기</h3>
+<p>실제 이미지 없이 파이프라인만 확인하려면 <code>samples/</code> 폴더를 씁니다.</p>
+<pre><code>python3 build.py --images samples/images --script samples/script.json</code></pre>
+</section>
+
+<footer>
+신들의 사생활 빌더 · 이 설명서는 저장소의 <code>docs/manual.html</code>과 같은 파일입니다.
+</footer>
+
+</div>

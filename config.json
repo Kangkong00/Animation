@@ -6,6 +6,7 @@
   "fps": 30,
   "tts_voice": "ko-KR-InJoonNeural",
   "tts_rate": "-5%",
+  "tts_pitch": "+0Hz",
   "cut_padding_sec": 0.4,
   "transition": "dissolve",
   "transition_sec": 0.5,

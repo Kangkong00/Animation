@@ -10,6 +10,7 @@ DEFAULTS = {
     "fps": 30,
     "tts_voice": "ko-KR-InJoonNeural",
     "tts_rate": "-5%",
+    "tts_pitch": "+0Hz",
     "cut_padding_sec": 0.4,
     "transition": "dissolve",
     "transition_sec": 0.5,
@@ -52,6 +53,7 @@ class Config:
         self.fps = int(data["fps"])
         self.tts_voice = data["tts_voice"]
         self.tts_rate = data["tts_rate"]
+        self.tts_pitch = data["tts_pitch"]
         self.cut_padding_sec = float(data["cut_padding_sec"])
         self.motion_strength = float(data["motion_strength"])
         self.subtitle = data["subtitle"]

@@ -85,17 +85,20 @@ def main() -> int:
 
     try:
         if args.voice_sample:
-            print("\n한국어 목소리를 전부 뽑습니다. 잠시 걸립니다...\n")
+            print("\n한국어 목소리를 톤별로 뽑습니다. 잠시 걸립니다...\n")
             made = tts.make_voice_samples(paths.out / "voice_samples", SAMPLE_LINE)
-            print(f"  {'번호':<4} {'성별':<4} {'이름':<16} {'길이':>7}   설정값")
-            print("  " + "-" * 62)
+            print(f"  {'번호':<4} {'성별':<4} {'이름':<12} {'톤':<12} {'길이':>7}")
+            print("  " + "-" * 50)
             for m in made:
                 sec = probe_duration(m["파일"])
-                print(f"  {m['번호']:<4} {m['성별']:<4} {m['이름']:<16} "
-                      f"{sec:>6.1f}초   {m['설정값']}")
-            print(f"\n  파일 위치: {paths.out / 'voice_samples'}")
-            print("  마음에 드는 목소리의 설정값을 config.json 의 tts_voice 에 넣으세요.")
-            print("  길이가 짧을수록 빨리 읽는 목소리입니다.\n")
+                print(f"  {m['번호']:<4} {m['성별']:<4} {m['이름']:<12} "
+                      f"{m['톤']:<12} {sec:>6.1f}초")
+            print(f"\n  파일 위치: {paths.out / 'voice_samples'}\n")
+            print("  마음에 드는 번호를 찾아 config.json 에 아래 세 줄을 넣으세요.\n")
+            for m in made:
+                print(f"  {m['번호']:02d}  \"tts_voice\": \"{m['목소리']}\", "
+                      f"\"tts_rate\": \"{m['속도']}\", \"tts_pitch\": \"{m['음높이']}\"")
+            print()
             return 0
 
         print("\n입력 점검...")
