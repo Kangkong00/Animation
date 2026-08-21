@@ -162,6 +162,9 @@ footer{margin-top:72px;padding-top:22px;border-top:1px solid var(--line);
 <h2>목소리 고르기</h2>
 <p>처음 한 번만 하면 됩니다. 정해두면 이후 모든 편에 같은 목소리가 쓰입니다.</p>
 <pre><code>Actions 탭 → <span class="k">목소리 들어보기</span> → Run workflow</code></pre>
+<div class="note"><p><b>받는 곳을 헷갈리기 쉽습니다.</b> 왼쪽 워크플로 이름을 누른 화면에는
+Artifacts가 없습니다. 그 화면의 <b>목록에서 방금 돌린 실행을 한 번 더 눌러</b> 들어가야
+맨 아래에 나옵니다.</p></div>
 <p>마이크로소프트가 제공하는 한국어 목소리는 <strong>세 개뿐</strong>입니다. 그래서
 목소리마다 <strong>말 속도와 음높이를 바꾼 세 가지 톤</strong>을 함께 뽑아
 <strong>모두 아홉 가지</strong>를 들려줍니다. 같은 목소리라도 낮고 느리게 읽으면
@@ -175,9 +178,10 @@ footer{margin-top:72px;padding-top:22px;border-top:1px solid var(--line);
 </tbody></table></div>
 <p>목록을 코드에 박아두지 않고 매번 물어보기 때문에, 목소리가 새로 나오면 자동으로
 후보에 들어옵니다.</p>
-<p>끝나면 <b>Artifacts</b>에서 <code>목소리-샘플</code>을 받으세요. 파일 이름이
-<code>01_남성_InJoon.mp3</code> 처럼 번호순이라 위에서부터 차례로 들으면 됩니다.
-읽는 데 걸린 시간도 함께 나오는데, <strong>짧을수록 빨리 읽는 목소리</strong>입니다.</p>
+<p>실행 화면 맨 아래 <b>Artifacts</b>에서 <code>목소리-샘플</code>을 받으세요. 파일 이름이
+<code>08_남성_InJoon_낮고느리게.mp3</code> 처럼 번호·성별·이름·톤 순이라 위에서부터
+차례로 들으면 됩니다. 읽는 데 걸린 시간도 함께 나오는데,
+<strong>짧을수록 빨리 읽는 목소리</strong>입니다.</p>
 <p>실행 화면 요약에 번호마다 넣을 세 줄이 그대로 나옵니다.
 <code>config.json</code>에 옮겨 적으면 끝입니다.</p>
 <pre><code>"tts_voice": <span class="k">"ko-KR-InJoonNeural"</span>,
@@ -219,8 +223,11 @@ footer{margin-top:72px;padding-top:22px;border-top:1px solid var(--line);
   </li>
   <li>
     <h3>받기<span class="dur">약 1분</span></h3>
-    <p>실행 화면 맨 아래 <b>Artifacts</b>에서 <code>완성본</code>을 받습니다.
-    zip이라 파일 앱에서 한 번 누르면 풀립니다.</p>
+    <p>Actions 목록에서 <b>방금 돌린 실행을 눌러</b> 들어간 뒤, 맨 아래
+    <b>Artifacts</b>에서 <code>완성본</code>을 받습니다. zip이라 파일 앱에서 한 번
+    누르면 풀립니다.</p>
+    <p>워크플로 이름만 누른 화면에는 Artifacts가 없습니다. 실행 하나를 골라
+    들어가야 합니다.</p>
   </li>
 </ol>
 <div class="note"><p><b>Actions 탭이 안 보이면</b> 사파리 주소창 왼쪽
