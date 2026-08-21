@@ -12,7 +12,7 @@ import json
 import sys
 from pathlib import Path
 
-from builder import fonts, pipeline, tts
+from builder import fonts, pipeline, subtitle, tts
 from builder.config import ConfigError
 from builder.media import MediaError
 from builder.script import ScriptError
@@ -150,7 +150,9 @@ def main() -> int:
             "자막 시각 어림": sum(1 for c in subbed if not c.subtitle_exact),
             "배경음악": res.bgm.name if res.bgm else None,
             "효과음 수": res.sfx_count,
-            "낱말 시각 개수": {f"컷 {c.n}": len(c.words) for c in res.cuts},
+            "시각 단위": {f"컷 {c.n}":
+                        f"{subtitle.boundary_kind(c.narration, c.words)}"
+                        f" ({len(c.words)}개)" for c in res.cuts},
             "어림잡은 이유": notes or None,
         }, ensure_ascii=False, indent=2), encoding="utf-8")
         return 0

@@ -11,6 +11,8 @@ from functools import lru_cache
 from pathlib import Path
 
 MAX_LINES = 2
+# 자막 하나가 화면에 떠 있어야 하는 최소 시간
+MIN_EVENT_SEC = 0.6
 
 # ASS 의 Fontsize 는 픽셀이 아니라 폰트 내부 단위라, 같은 48 이라도 폰트마다
 # 화면에 그려지는 크기가 다르다. Noto Sans CJK KR 은 48 로 두면 28px 로 나온다.
@@ -83,40 +85,64 @@ def _letters(text: str) -> str:
 
 def times_from_words(events: list[list[str]], words: list[dict],
                      duration: float) -> list[tuple[float, float]] | None:
-    """낱말이 실제로 발음된 시각으로 자막 시간을 잡는다.
+    """말한 시각으로 자막 시간을 잡는다.
 
-    자막이 나레이션을 그대로 옮긴 경우에만 쓸 수 있다. 자막을 따로 줄여 썼다면
-    어느 낱말에 해당하는지 알 수 없으므로 None 을 돌려주고 어림 계산으로 넘긴다.
+    받아 오는 시각이 낱말 단위면 그대로 정확하다. 문장 단위밖에 못 받는 판에서는
+    문장이 시작하는 시각은 맞추고 그 안에서만 글자 수로 나눈다. 시각 한 개에
+    자막 여러 개가 걸려도 앞 자막이 순식간에 지나가지 않는다.
+
+    자막을 나레이션과 다르게 줄여 쓴 경우에는 어느 대목인지 알 수 없어 None.
     """
     if not words:
         _last_reason.clear()
         _last_reason.append("낱말 시각이 없음 (words.json 비어 있음)")
         return None
 
-    spoken, owner = [], []
+    # 글자마다 (몇 번째 시각 덩어리인지, 그 안에서 몇 번째인지, 덩어리 글자수)
+    spoken: list[tuple[str, int, int, int]] = []
     for i, w in enumerate(words):
-        for ch in _letters(w.get("text", "")):
-            spoken.append(ch)
-            owner.append(i)
+        letters = _letters(w.get("text", ""))
+        for j, ch in enumerate(letters):
+            spoken.append((ch, i, j, len(letters)))
+
     written = _letters("".join("".join(ev) for ev in events))
-    if not spoken or "".join(spoken) != written:
+    if not spoken or "".join(c[0] for c in spoken) != written:
         _last_reason.clear()
         _last_reason.append(
-            f"글자가 어긋남 · 낱말 {len(words)}개\n"
-            f"        음성쪽: {''.join(spoken)[:60]}\n"
+            f"글자가 어긋남 · 시각 덩어리 {len(words)}개\n"
+            f"        음성쪽: {''.join(c[0] for c in spoken)[:60]}\n"
             f"        자막쪽: {written[:60]}")
         return None
 
+    def time_at(pos: int) -> float:
+        if pos >= len(spoken):
+            return duration
+        _, i, j, n = spoken[pos]
+        a, b = float(words[i]["start"]), float(words[i]["end"])
+        if b <= a or n <= 1:
+            return a
+        return a + (b - a) * (j / n)
+
     starts, pos = [], 0
     for ev in events:
-        n = len(_letters("".join(ev)))
-        starts.append(float(words[owner[pos]]["start"]) if pos < len(owner) else duration)
-        pos += n
+        starts.append(time_at(pos))
+        pos += len(_letters("".join(ev)))
 
-    # 첫 자막은 컷과 함께 뜨고, 자막 사이에 빈틈을 두지 않는다. 깜빡여 보인다.
     starts[0] = 0.0
+    # 뒤로 가지 않게, 그리고 자막 하나가 최소 0.6초는 떠 있게 다듬는다
+    for i in range(1, len(starts)):
+        starts[i] = min(max(starts[i], starts[i - 1] + MIN_EVENT_SEC),
+                        duration - MIN_EVENT_SEC * (len(starts) - i))
     return [(starts[i], starts[i + 1] if i + 1 < len(starts) else duration)
             for i in range(len(starts))]
+
+
+def boundary_kind(narration: str, words: list[dict]) -> str:
+    """받아 온 시각이 낱말 단위인지 문장 단위인지."""
+    if not words:
+        return "없음"
+    return "낱말 단위" if len(words) >= max(2, len(narration.split()) * 0.6) \
+        else "문장 단위"
 
 
 def _timestamp(seconds: float) -> str:

@@ -36,7 +36,14 @@ async def _edge_save(text: str, out: Path, voice: str, rate: str) -> list[dict]:
     """
     import edge_tts
 
-    comm = edge_tts.Communicate(text, voice, rate=rate)
+    # 낱말 단위를 반드시 요청한다. 판 7.x 의 기본값은 문장 단위라, 그대로 두면
+    # 긴 문장 하나에 시각이 한 개만 와서 자막을 맞출 수가 없다.
+    try:
+        comm = edge_tts.Communicate(text, voice, rate=rate,
+                                    boundary="WordBoundary")
+    except TypeError:
+        comm = edge_tts.Communicate(text, voice, rate=rate)
+
     words: list[dict] = []
     seen: set[str] = set()
     with open(out, "wb") as f:
