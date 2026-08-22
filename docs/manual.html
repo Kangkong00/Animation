@@ -309,6 +309,24 @@ Artifacts가 없습니다. 그 화면의 <b>목록에서 방금 돌린 실행을
 </tbody></table></div>
 <p>같은 방향을 계속 쓰면 단조롭습니다. 확대와 축소를 번갈아 두면 화면이 살아납니다.</p>
 
+<h3>목소리 음색</h3>
+<p>합성 음성은 그대로 쓰면 얇고 쇳소리가 납니다. 그래서 낮은 소리를 보태고,
+쇳소리가 나는 대역을 눌러 주고, 아주 옅은 공간감을 더합니다.</p>
+<div class="tw"><table>
+<thead><tr><th>narration_tone</th><th>결과</th></tr></thead>
+<tbody>
+<tr><td><code>off</code></td><td>손대지 않습니다</td></tr>
+<tr><td><code>warm</code></td><td>조금 도톰해집니다</td></tr>
+<tr><td><code>epic</code></td><td>무게가 실립니다. 신화 나레이션 기본값</td></tr>
+</tbody></table></div>
+<p>Actions의 <b>목소리 들어보기</b>를 돌리면 지금 목소리로 세 가지를 다 만들어
+줍니다. 들어보고 고르세요.</p>
+
+<h3>워터마크</h3>
+<p>그림 생성 도구가 오른쪽 아래에 표식을 남기면 <code>config.json</code>의
+<code>watermark</code>가 그 자리를 주변 색으로 메웁니다. 자리는 비율로 적혀 있어
+그림 크기가 달라져도 같은 곳을 가리킵니다.</p>
+
 <h3>선택 항목</h3>
 <div class="tw"><table>
 <thead><tr><th>이름</th><th>뜻</th></tr></thead>
@@ -401,7 +419,10 @@ Artifacts가 없습니다. 그 화면의 <b>목록에서 방금 돌린 실행을
 <tr><td><code>fps</code></td><td class="num">30</td><td>초당 프레임</td></tr>
 <tr><td><code>tts_voice</code></td><td class="num">InJoon</td><td>목소리</td></tr>
 <tr><td><code>tts_rate</code></td><td class="num">-5%</td><td>말 속도. 음수가 느림</td></tr>
-<tr><td><code>tts_pitch</code></td><td class="num">+0Hz</td><td>음높이. 음수가 낮음</td></tr>
+<tr><td><code>tts_pitch</code></td><td class="num">-10Hz</td><td>음높이. 음수가 낮음</td></tr>
+<tr><td><code>narration_tone</code></td><td class="num">epic</td><td>목소리 음색. <code>off</code> 그대로 · <code>warm</code> 은은하게 · <code>epic</code> 무게감 있게</td></tr>
+<tr><td><code>watermark.remove</code></td><td class="num">true</td><td>그림에 박힌 워터마크를 지웁니다</td></tr>
+<tr><td><code>image_fit</code></td><td class="num">auto</td><td>비율이 조금 다르면 잘라 채우고, 많이 다르면 여백을 넣습니다</td></tr>
 <tr><td><code>cut_padding_sec</code></td><td class="num">0.4</td><td>말이 끝난 뒤 여백</td></tr>
 <tr><td><code>motion_strength</code></td><td class="num">1.08</td><td>카메라 움직임 크기. 8% 확대. <b>1.15 초과 시 실행 거부</b></td></tr>
 <tr><td><code>motion_quality</code></td><td class="num">max</td><td><code>max</code> 가장 부드러움 · <code>smooth</code> 중간 · <code>fast</code> 빠르지만 미세하게 튐</td></tr>

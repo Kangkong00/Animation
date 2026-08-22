@@ -68,12 +68,19 @@ def image_chain(motion: str, cfg: Config, frames: int, fit: str = "pad") -> str:
     )
 
 
-def pad_audio(src: Path, dst: Path, seconds: float) -> Path:
-    """나레이션 뒤에 여백을 붙여 컷 길이에 정확히 맞춘 wav. 무손실이라 이어붙여도 안 밀린다."""
+def pad_audio(src: Path, dst: Path, seconds: float, tone: str = "") -> Path:
+    """나레이션에 음색을 입히고 뒤에 여백을 붙여 컷 길이에 정확히 맞춘 wav.
+
+    음색 처리는 길이를 바꾸지 않는다. 뒤에 apad 로 채우고 지정한 길이에서
+    자르므로, 여운이 조금 붙어도 컷 길이는 그대로다.
+    """
     dst.parent.mkdir(parents=True, exist_ok=True)
+    chain = f"aresample={AUDIO_RATE}:first_pts=0"
+    if tone:
+        chain += "," + tone
     run([
         "ffmpeg", "-y", "-v", "error", "-i", str(src),
-        "-af", f"aresample={AUDIO_RATE}:first_pts=0,apad",
+        "-af", f"{chain},apad",
         "-ac", str(AUDIO_CH), "-t", f"{seconds:.6f}",
         "-c:a", "pcm_s16le", str(dst),
     ], f"{src.stem} 음성 길이 맞추기")

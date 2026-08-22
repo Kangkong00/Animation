@@ -10,6 +10,27 @@ from pathlib import Path
 
 from .media import MediaError, run
 
+# 나레이션 음색. 합성 음성 특유의 얇고 쇳소리 나는 느낌을 눌러 주고,
+# 가슴 울림과 아주 옅은 공간감을 더해 '녹음한 목소리'에 가깝게 만든다.
+NARRATION_TONE = {
+    "off": "",
+    "warm": (
+        "highpass=f=65,"
+        "equalizer=f=130:t=q:w=1.0:g=2.5,"      # 가슴 울림
+        "equalizer=f=4200:t=q:w=2.0:g=-2.5,"    # 쇳소리 억제
+        "acompressor=threshold=-20dB:ratio=2.5:attack=12:release=220:makeup=2"
+    ),
+    "epic": (
+        "highpass=f=55,"
+        "equalizer=f=110:t=q:w=0.9:g=4,"        # 더 깊은 저음
+        "equalizer=f=330:t=q:w=1.2:g=-2,"       # 웅웅거림 제거
+        "equalizer=f=4500:t=q:w=2.0:g=-4,"      # 쇳소리 강하게 억제
+        "acompressor=threshold=-22dB:ratio=3.5:attack=8:release=180:makeup=3.5,"
+        "aecho=0.9:0.85:48:0.12,"               # 옅은 공간감
+        "alimiter=limit=0.95"
+    ),
+}
+
 AUDIO_RATE = 48000
 AUDIO_CH = 2
 BGM_EXTS = (".mp3", ".m4a", ".wav", ".ogg", ".flac", ".aac")

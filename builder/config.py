@@ -11,6 +11,7 @@ DEFAULTS = {
     "tts_voice": "ko-KR-InJoonNeural",
     "tts_rate": "-5%",
     "tts_pitch": "+0Hz",
+    "narration_tone": "epic",
     "cut_padding_sec": 0.4,
     "transition": "dissolve",
     "transition_sec": 0.5,
@@ -31,6 +32,11 @@ DEFAULTS = {
     "motion_quality": "max",
     "workers": 0,
     "image_naming": "strict",
+    "watermark": {
+        "remove": False,
+        "x_pct": 90.8, "y_pct": 83.3, "w_pct": 4.3, "h_pct": 8.0,
+        "soften": 3.0,
+    },
     "image_fit": "auto",
     "crop_tolerance_pct": 3.0,
     "bgm_duck": "medium",
@@ -56,6 +62,7 @@ class Config:
         self.tts_voice = data["tts_voice"]
         self.tts_rate = data["tts_rate"]
         self.tts_pitch = data["tts_pitch"]
+        self.narration_tone = data["narration_tone"]
         self.cut_padding_sec = float(data["cut_padding_sec"])
         self.motion_strength = float(data["motion_strength"])
         self.subtitle = data["subtitle"]
@@ -67,6 +74,7 @@ class Config:
         self.transition = data["transition"]
         self.transition_sec = float(data["transition_sec"])
         self.image_naming = data["image_naming"]
+        self.watermark = data["watermark"]
         self.image_fit = data["image_fit"]
         self.crop_tolerance_pct = float(data["crop_tolerance_pct"])
         self.ending_card_sec = float(data["ending_card_sec"])
@@ -137,6 +145,12 @@ def load(path: str | Path = "config.json") -> Config:
         )
     if float(sh["max_seconds"]) <= 0:
         raise ConfigError("shorts.max_seconds 는 0보다 커야 합니다.")
+    from .audio import NARRATION_TONE
+    if data["narration_tone"] not in NARRATION_TONE:
+        raise ConfigError(
+            f"narration_tone '{data['narration_tone']}' 는 알 수 없는 값입니다. "
+            f"가능한 값: {', '.join(NARRATION_TONE)}"
+        )
     if data["image_fit"] not in ("auto", "pad", "cover"):
         raise ConfigError(
             f"image_fit '{data['image_fit']}' 는 알 수 없는 값입니다. "

@@ -56,10 +56,14 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: 지금 목소리로 음색 세 가지
+        run: python3 build.py --tone-sample | tee -a voice-list.txt
+
       - uses: actions/upload-artifact@v4
         with:
           name: 목소리-샘플
           path: |
             output/voice_samples/*.mp3
+            output/tone_samples/*.wav
             voice-list.txt
           retention-days: 30

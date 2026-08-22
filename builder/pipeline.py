@@ -12,6 +12,7 @@ from . import config as config_mod
 from . import script as script_mod
 from . import fonts, tts, video
 from . import subtitle as subs
+from . import watermark as wm
 from .media import probe_duration, probe_size, require_tools
 from .script import ScriptError as ScriptErrorLike
 
@@ -63,6 +64,19 @@ class Result:
     bgm: Path | None = None
     sfx_count: int = 0
 
+
+
+def _strip_watermarks(cuts, cfg, workdir: Path, on_event, total: int) -> None:
+    """워터마크를 지운 그림으로 바꿔 둔다. 원본 파일은 건드리지 않는다."""
+    if not cfg.watermark.get("remove"):
+        return
+    clean_dir = workdir / "clean"
+    with ThreadPoolExecutor(max_workers=cfg.workers) as pool:
+        jobs = {pool.submit(wm.clean, c.image, clean_dir / f"{c.stem}.png", cfg): c
+                for c in cuts}
+        for job in as_completed(jobs):
+            jobs[job].image = job.result()
+    on_event(stage="watermark", total=total)
 
 def _noop(**kwargs):
     pass
@@ -140,8 +154,12 @@ def build(paths: Paths, engine: str = "edge", on_event=_noop,
     total_sec = t + card_sec
 
     # 2) 컷별 클립 — 컷끼리 서로 의존하지 않으므로 코어 수만큼 동시에 만든다
-    pad_wavs = [video.pad_audio(c.audio, pad_dir / f"{c.stem}.wav", c.duration_sec)
+    tone = audio_mod.NARRATION_TONE[cfg.narration_tone]
+    pad_wavs = [video.pad_audio(c.audio, pad_dir / f"{c.stem}.wav",
+                                c.duration_sec, tone)
                 for c in scr.cuts]
+
+    _strip_watermarks(scr.cuts, cfg, paths.work, on_event, total)
 
     fit_of = {c.n: decide_fit(cfg, *probe_size(c.image))[0] for c in scr.cuts}
 
@@ -330,8 +348,12 @@ def build_shorts(paths: Paths, spec: str, engine: str = "edge",
     total = len(picked)
     on_event(stage="start", total=total, title=f"{scr.title} · 쇼츠", font=font)
 
-    pad_wavs = [video.pad_audio(c.audio, pad_dir / f"{c.stem}.wav", c.duration_sec)
+    tone = audio_mod.NARRATION_TONE[cfg.narration_tone]
+    pad_wavs = [video.pad_audio(c.audio, pad_dir / f"{c.stem}.wav",
+                                c.duration_sec, tone)
                 for c in picked]
+
+    _strip_watermarks(picked, cfg, work, on_event, total)
 
     def make(idx: int):
         cut = picked[idx]

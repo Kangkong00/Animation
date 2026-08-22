@@ -4,9 +4,10 @@
     1080
   ],
   "fps": 30,
-  "tts_voice": "ko-KR-SunHiNeural",
-  "tts_rate": "+4%",
-  "tts_pitch": "+0Hz",
+  "tts_voice": "ko-KR-InJoonNeural",
+  "tts_rate": "-14%",
+  "tts_pitch": "-10Hz",
+  "narration_tone": "epic",
   "cut_padding_sec": 0.4,
   "transition": "dissolve",
   "transition_sec": 0.5,
@@ -27,6 +28,14 @@
   "motion_quality": "max",
   "workers": 0,
   "image_naming": "ordered",
+  "watermark": {
+    "remove": true,
+    "x_pct": 90.8,
+    "y_pct": 83.3,
+    "w_pct": 4.3,
+    "h_pct": 8.0,
+    "soften": 3.0
+  },
   "image_fit": "auto",
   "crop_tolerance_pct": 3.0,
   "bgm_duck": "medium",

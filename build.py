@@ -52,6 +52,8 @@ def make_reporter():
             print(f"\n  소리 섞는 중 — {', '.join(bits)}", flush=True)
         elif stage == "notice":
             print(f"  알림  {e['message']}")
+        elif stage == "watermark":
+            print(f"\n  워터마크 지움  {e['total']}장")
         elif stage == "ending":
             print(f"\n  엔딩 카드  {e['seconds']:.1f}초")
         elif stage == "concat":
@@ -71,6 +73,8 @@ def main() -> int:
     ap.add_argument("--check", action="store_true", help="입력 점검만 하고 종료")
     ap.add_argument("--shorts", metavar="컷범위",
                     help="고른 컷만 9:16 세로 쇼츠로. 예: --shorts 3-8")
+    ap.add_argument("--tone-sample", action="store_true",
+                    help="지금 목소리로 음색 처리 세 가지를 비교 생성")
     ap.add_argument("--voice-sample", action="store_true",
                     help="남성·여성 목소리 샘플만 생성")
     args = ap.parse_args()
@@ -84,6 +88,24 @@ def main() -> int:
     )
 
     try:
+        if args.tone_sample:
+            from builder import audio as audio_mod, config as cfg_mod, video
+            cfg = cfg_mod.load(paths.config)
+            out = paths.out / "tone_samples"
+            out.mkdir(parents=True, exist_ok=True)
+            raw = tts.synth(SAMPLE_LINE, out / "_raw.mp3", cfg.tts_voice,
+                            cfg.tts_rate, cfg.tts_pitch, engine=args.tts,
+                            cut_label="음색 샘플")
+            sec = probe_duration(raw)
+            print(f"\n  목소리 {cfg.tts_voice} · {cfg.tts_rate} · {cfg.tts_pitch}\n")
+            for name, chain in audio_mod.NARRATION_TONE.items():
+                wav = video.pad_audio(raw, out / f"tone_{name}.wav", sec, chain)
+                print(f"  tone_{name}.wav   {name}")
+            raw.unlink()
+            print(f"\n  파일 위치: {out}")
+            print("  마음에 드는 것을 config.json 의 narration_tone 에 넣으세요.\n")
+            return 0
+
         if args.voice_sample:
             print("\n한국어 목소리를 톤별로 뽑습니다. 잠시 걸립니다...\n")
             made = tts.make_voice_samples(paths.out / "voice_samples", SAMPLE_LINE)
