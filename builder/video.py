@@ -47,12 +47,20 @@ def _motion_filter(motion: str, strength: float, frames: int) -> str:
     return f"zoompan=z='{zoom}':x='{x}':y='{y}'"
 
 
-def image_chain(motion: str, cfg: Config, frames: int) -> str:
-    """정지 이미지 → 움직이는 영상. 이미지를 자르거나 늘리지 않고 비율을 지킨다."""
+def image_chain(motion: str, cfg: Config, frames: int, fit: str = "pad") -> str:
+    """정지 이미지 → 움직이는 영상.
+
+    pad   — 비율을 지키고 남는 곳을 검게 둔다. 그림이 온전히 남는다.
+    cover — 화면을 채우고 넘치는 가장자리를 잘라낸다. 비율이 거의 같을 때만 쓴다.
+    """
     sw, sh = cfg.width * cfg.supersample, cfg.height * cfg.supersample
+    frame = (f"scale={sw}:{sh}:force_original_aspect_ratio=increase:flags=lanczos,"
+             f"crop={sw}:{sh}"
+             if fit == "cover" else
+             f"scale={sw}:{sh}:force_original_aspect_ratio=decrease:flags=lanczos,"
+             f"pad={sw}:{sh}:(ow-iw)/2:(oh-ih)/2:color=black")
     return (
-        f"scale={sw}:{sh}:force_original_aspect_ratio=decrease:flags=lanczos,"
-        f"pad={sw}:{sh}:(ow-iw)/2:(oh-ih)/2:color=black,"
+        frame + ","
         f"setsar=1,"
         + _motion_filter(motion, cfg.motion_strength, frames)
         + f":d={frames}:s={cfg.size}:fps={cfg.fps},"
@@ -97,7 +105,8 @@ def fade_filter(duration: float, cfg: Config,
     return ",".join(parts)
 
 
-def vertical_graph(motion: str, cfg: Config, frames: int) -> str:
+def vertical_graph(motion: str, cfg: Config, frames: int,
+                   fit: str = "pad") -> str:
     """가로 그림을 세로 화면에 담는다.
 
     blur — 배경은 화면을 꽉 채우도록 확대해 흐리게 깔고, 그 위에 원본 비율
@@ -109,12 +118,12 @@ def vertical_graph(motion: str, cfg: Config, frames: int) -> str:
     w, h = cfg.width, cfg.height
 
     if mode == "crop":
-        return "[0:v]" + image_chain(motion, cfg, frames) + "[v]"
+        return "[0:v]" + image_chain(motion, cfg, frames, fit) + "[v]"
 
     # 앞에 얹을 그림은 가로폭에 맞춘 16:9
     fg_h = (round(w * 9 / 16) // 2) * 2
     inner = cfg.variant(resolution=[w, fg_h])
-    fg = image_chain(motion, inner, frames)
+    fg = image_chain(motion, inner, frames, fit)
 
     if mode == "pad":
         bg = f"color=c=black:s={w}x{h}:d=1"
@@ -133,10 +142,10 @@ def vertical_graph(motion: str, cfg: Config, frames: int) -> str:
 
 def build_clip(image: Path, audio_wav: Path, out: Path, cfg: Config,
                motion: str, frames: int, extra_video: str = "",
-               graph: str | None = None) -> Path:
+               graph: str | None = None, fit: str = "pad") -> Path:
     """컷 하나를 mp4 로. 이 파일만 따로 떼어 캡컷으로 가져가도 쓸 수 있다."""
     out.parent.mkdir(parents=True, exist_ok=True)
-    graph = graph or ("[0:v]" + image_chain(motion, cfg, frames) + "[v]")
+    graph = graph or ("[0:v]" + image_chain(motion, cfg, frames, fit) + "[v]")
     if extra_video:
         # [v] 뒤에 필터를 더 붙인다
         graph = graph[:graph.rindex("[v]")] + "," + extra_video + "[v]"

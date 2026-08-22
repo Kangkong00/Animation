@@ -68,6 +68,25 @@ def _noop(**kwargs):
     pass
 
 
+def decide_fit(cfg, width: int, height: int) -> tuple[str, str]:
+    """이 그림을 화면에 어떻게 앉힐지. 돌려주는 둘째 값은 사람이 읽을 설명."""
+    if not width or not height:
+        return "pad", ""
+    want = cfg.width / cfg.height
+    got = width / height
+    off = abs(got - want) / want * 100
+    if off < 0.05:
+        return "cover", ""
+    if cfg.image_fit == "pad":
+        return "pad", f"({width}x{height}) 는 비율이 {off:.1f}% 달라 검은 여백이 들어갑니다"
+    if cfg.image_fit == "cover":
+        return "cover", f"({width}x{height}) 는 비율이 {off:.1f}% 달라 가장자리를 잘라 채웁니다"
+    # auto — 조금 어긋난 정도면 잘라서 채우고, 많이 다르면 그림을 지킨다
+    if off <= cfg.crop_tolerance_pct:
+        return "cover", f"({width}x{height}) 는 비율이 {off:.1f}% 달라 가장자리를 아주 조금 잘라 채웁니다"
+    return "pad", f"({width}x{height}) 는 비율이 {off:.1f}% 달라 검은 여백이 들어갑니다"
+
+
 def build(paths: Paths, engine: str = "edge", on_event=_noop,
           reuse_audio: bool = True) -> Result:
     started = time.time()
@@ -124,6 +143,8 @@ def build(paths: Paths, engine: str = "edge", on_event=_noop,
     pad_wavs = [video.pad_audio(c.audio, pad_dir / f"{c.stem}.wav", c.duration_sec)
                 for c in scr.cuts]
 
+    fit_of = {c.n: decide_fit(cfg, *probe_size(c.image))[0] for c in scr.cuts}
+
     def make_clip(idx: int):
         cut = scr.cuts[idx]
         # 자막은 카메라가 움직인 뒤에 얹는다. 그래야 글자가 같이 흔들리지 않는다.
@@ -148,7 +169,7 @@ def build(paths: Paths, engine: str = "edge", on_event=_noop,
         cut.clip = video.build_clip(
             cut.image, pad_wavs[idx], paths.clips / f"{cut.stem}.mp4",
             cfg, cut.motion, cut.frames,
-            extra_video=",".join(filters),
+            extra_video=",".join(filters), fit=fit_of[cut.n],
         )
         return cut
 
@@ -324,10 +345,11 @@ def build_shorts(paths: Paths, spec: str, engine: str = "edge",
                                  first=idx == 0, last=idx == total - 1)
         if fade:
             filters.append(fade)
+        fit = decide_fit(cfg, *probe_size(cut.image))[0]
         clip = video.build_clip(
             cut.image, pad_wavs[idx], work / f"{cut.stem}.mp4",
             vcfg, cut.motion, cut.frames, extra_video=",".join(filters),
-            graph=video.vertical_graph(cut.motion, vcfg, cut.frames),
+            graph=video.vertical_graph(cut.motion, vcfg, cut.frames, fit),
         )
         return idx, clip
 
@@ -375,11 +397,15 @@ def inspect(paths: Paths) -> dict:
     scr = script_mod.load(paths.script)
     script_mod.attach_images(scr, paths.images, cfg.image_naming)
 
-    warns = []
+    warns, fits = [], {}
     for cut in scr.cuts:
-        w, h = probe_size(cut.image)
-        if w and h and abs(w / h - 16 / 9) > 0.01:
-            warns.append(f"컷 {cut.n} ({w}x{h}) 는 16:9 가 아닙니다 → 검은 여백이 들어갑니다")
+        fit, note = decide_fit(cfg, *probe_size(cut.image))
+        fits.setdefault((fit, note), []).append(cut.n)
+    for (fit, note), nums in fits.items():
+        if note:
+            warns.append(f"컷 {nums[0]}~{nums[-1]} ({len(nums)}장) {note}"
+                         if len(nums) > 2 else
+                         f"컷 {', '.join(map(str, nums))} {note}")
 
     reworded = [c.n for c in scr.cuts if c.subtitle.strip() != c.narration.strip()]
     if reworded:

@@ -31,6 +31,8 @@ DEFAULTS = {
     "motion_quality": "max",
     "workers": 0,
     "image_naming": "strict",
+    "image_fit": "auto",
+    "crop_tolerance_pct": 3.0,
     "bgm_duck": "medium",
     "sfx_volume": 0.6,
 }
@@ -65,6 +67,8 @@ class Config:
         self.transition = data["transition"]
         self.transition_sec = float(data["transition_sec"])
         self.image_naming = data["image_naming"]
+        self.image_fit = data["image_fit"]
+        self.crop_tolerance_pct = float(data["crop_tolerance_pct"])
         self.ending_card_sec = float(data["ending_card_sec"])
         self.shorts = data["shorts"]
         self.supersample = SUPERSAMPLE_BY_QUALITY[data["motion_quality"]]
@@ -133,6 +137,11 @@ def load(path: str | Path = "config.json") -> Config:
         )
     if float(sh["max_seconds"]) <= 0:
         raise ConfigError("shorts.max_seconds 는 0보다 커야 합니다.")
+    if data["image_fit"] not in ("auto", "pad", "cover"):
+        raise ConfigError(
+            f"image_fit '{data['image_fit']}' 는 알 수 없는 값입니다. "
+            "가능한 값: auto, pad(검은 여백), cover(가장자리를 잘라 채움)"
+        )
     if data["image_naming"] not in ("strict", "ordered"):
         raise ConfigError(
             f"image_naming '{data['image_naming']}' 는 알 수 없는 값입니다. "

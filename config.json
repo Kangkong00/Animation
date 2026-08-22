@@ -27,6 +27,8 @@
   "motion_quality": "max",
   "workers": 0,
   "image_naming": "ordered",
+  "image_fit": "auto",
+  "crop_tolerance_pct": 3.0,
   "bgm_duck": "medium",
   "sfx_volume": 0.6,
   "ending_card_sec": 3.0,
