@@ -20,6 +20,30 @@ NARRATION_TONE = {
         "equalizer=f=4200:t=q:w=2.0:g=-2.5,"    # 쇳소리 억제
         "acompressor=threshold=-20dB:ratio=2.5:attack=12:release=220:makeup=2"
     ),
+    "deep": (
+        # 소리 높이를 내리되 성대 울림까지 함께 내린다.
+        # 목소리만 낮추면 어색하지만, 함께 내리면 체구가 큰 사람이 말하는 소리가 된다.
+        "rubberband=pitch=0.93,"
+        "highpass=f=50,"
+        "equalizer=f=100:t=q:w=0.9:g=4.5,"
+        "equalizer=f=320:t=q:w=1.2:g=-2.5,"
+        "equalizer=f=4500:t=q:w=2.0:g=-4.5,"
+        "acompressor=threshold=-22dB:ratio=3.5:attack=8:release=180:makeup=3.5,"
+        "aecho=0.9:0.85:55:0.14,"
+        "alimiter=limit=0.95"
+    ),
+    "myth": (
+        # 가장 깊게. 배음을 더해 합성 음성의 얇음을 메우고 넓은 공간에 놓는다.
+        "rubberband=pitch=0.89,"
+        "highpass=f=45,"
+        "equalizer=f=90:t=q:w=0.8:g=5.5,"
+        "equalizer=f=300:t=q:w=1.2:g=-3,"
+        "equalizer=f=4800:t=q:w=2.0:g=-5,"
+        "aexciter=amount=1.5:blend=2,"
+        "acompressor=threshold=-24dB:ratio=4:attack=6:release=160:makeup=4,"
+        "aecho=0.88:0.8:70|130:0.16|0.09,"
+        "alimiter=limit=0.95"
+    ),
     "epic": (
         "highpass=f=55,"
         "equalizer=f=110:t=q:w=0.9:g=4,"        # 더 깊은 저음
