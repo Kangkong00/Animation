@@ -10,61 +10,39 @@ from pathlib import Path
 
 from .media import MediaError, run
 
-# 나레이션 음색. 합성 음성 특유의 얇고 쇳소리 나는 느낌을 눌러 주고,
-# 가슴 울림과 아주 옅은 공간감을 더해 '녹음한 목소리'에 가깝게 만든다.
+# 나레이션 음색.
+#
+# 잔향은 넣지 않는다. 공간감을 준다고 넣었더니 말이 뭉개지고 인공적으로 들렸다.
+#
+# 소리 높이를 내릴 때는 음정만 따로 변조하지 않는다. 그 방식은 파형을 다시
+# 짜맞추기 때문에 기계음이 생긴다. 대신 테이프를 늦게 돌리듯 통째로 늦춰
+# 자연히 낮아지게 한 다음, 속도만 되돌린다.
+_TTS_RATE = 24000          # edge-tts 가 내려주는 표본율
+
+# 치찰음과 금속성 대역만 눌러 주는 가벼운 정리. 압축도 약하게 건다.
+_CLEANUP = (
+    "deesser=i=0.35,"
+    "equalizer=f=3200:t=q:w=1.8:g=-3,"      # 금속성
+    "equalizer=f=115:t=q:w=1.0:g=2,"        # 저음 살짝
+    "acompressor=threshold=-18dB:ratio=2:attack=15:release=250:makeup=1.5,"
+    "alimiter=limit=0.95"
+)
+
+
+def _drop(ratio: float) -> str:
+    """소리 높이를 ratio 배로 낮춘다. 길이는 그대로."""
+    return (f"aresample={_TTS_RATE},"
+            f"asetrate={int(_TTS_RATE * ratio)},"
+            f"aresample=48000,"
+            f"atempo={1 / ratio:.10f},"
+            f"highpass=f=60,{_CLEANUP}")
+
+
 NARRATION_TONE = {
-    "off": "",
-    "warm": (
-        "highpass=f=65,"
-        "equalizer=f=130:t=q:w=1.0:g=2.5,"      # 가슴 울림
-        "equalizer=f=4200:t=q:w=2.0:g=-2.5,"    # 쇳소리 억제
-        "acompressor=threshold=-20dB:ratio=2.5:attack=12:release=220:makeup=2"
-    ),
-    "deep": (
-        # 소리 높이를 내리되 성대 울림까지 함께 내린다.
-        # 목소리만 낮추면 어색하지만, 함께 내리면 체구가 큰 사람이 말하는 소리가 된다.
-        "rubberband=pitch=0.93,"
-        "highpass=f=50,"
-        "equalizer=f=100:t=q:w=0.9:g=4.5,"
-        "equalizer=f=320:t=q:w=1.2:g=-2.5,"
-        "equalizer=f=4500:t=q:w=2.0:g=-4.5,"
-        "acompressor=threshold=-22dB:ratio=3.5:attack=8:release=180:makeup=3.5,"
-        "aecho=0.9:0.85:55:0.14,"
-        "alimiter=limit=0.95"
-    ),
-    "myth": (
-        # 가장 깊게. 배음을 더해 합성 음성의 얇음을 메우고 넓은 공간에 놓는다.
-        "rubberband=pitch=0.89,"
-        "highpass=f=45,"
-        "equalizer=f=90:t=q:w=0.8:g=5.5,"
-        "equalizer=f=300:t=q:w=1.2:g=-3,"
-        "equalizer=f=4800:t=q:w=2.0:g=-5,"
-        "aexciter=amount=1.5:blend=2,"
-        "acompressor=threshold=-24dB:ratio=4:attack=6:release=160:makeup=4,"
-        "aecho=0.88:0.8:70|130:0.16|0.09,"
-        "alimiter=limit=0.95"
-    ),
-    "epic": (
-        "highpass=f=55,"
-        "equalizer=f=110:t=q:w=0.9:g=4,"        # 더 깊은 저음
-        "equalizer=f=330:t=q:w=1.2:g=-2,"       # 웅웅거림 제거
-        "equalizer=f=4500:t=q:w=2.0:g=-4,"      # 쇳소리 강하게 억제
-        "acompressor=threshold=-22dB:ratio=3.5:attack=8:release=180:makeup=3.5,"
-        "aecho=0.9:0.85:48:0.12,"               # 옅은 공간감
-        "alimiter=limit=0.95"
-    ),
-}
-
-AUDIO_RATE = 48000
-AUDIO_CH = 2
-BGM_EXTS = (".mp3", ".m4a", ".wav", ".ogg", ".flac", ".aac")
-
-# 더킹 세기. 괄호 안은 이 대본으로 실측한, 말할 때 배경음악이 눌리는 양이다.
-# 배경음악은 이미 15% 로 깔리므로 너무 세게 누르면 아예 안 들린다.
-DUCK_LEVELS = {
-    "light":  "threshold=0.05:ratio=3:attack=20:release=250:makeup=1",   # 약 4dB
-    "medium": "threshold=0.03:ratio=4:attack=20:release=300:makeup=1",   # 약 8dB
-    "strong": "threshold=0.02:ratio=6:attack=20:release=400:makeup=1",   # 약 12dB
+    "off":   "",
+    "clean": f"highpass=f=60,{_CLEANUP}",   # 높이는 그대로, 정리만
+    "low":   _drop(0.87),                   # 132Hz → 115Hz
+    "lower": _drop(0.795),                  # 132Hz → 105Hz
 }
 
 

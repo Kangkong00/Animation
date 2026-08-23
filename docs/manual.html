@@ -310,16 +310,19 @@ Artifacts가 없습니다. 그 화면의 <b>목록에서 방금 돌린 실행을
 <p>같은 방향을 계속 쓰면 단조롭습니다. 확대와 축소를 번갈아 두면 화면이 살아납니다.</p>
 
 <h3>목소리 음색</h3>
-<p>합성 음성은 그대로 쓰면 얇고 쇳소리가 납니다. 그래서 낮은 소리를 보태고,
-쇳소리가 나는 대역을 눌러 주고, 아주 옅은 공간감을 더합니다.</p>
+<p>합성 음성은 그대로 쓰면 얇고 쇳소리가 납니다. 치찰음과 금속성 대역만 눌러 주고,
+필요하면 소리 높이를 내립니다. <strong>잔향은 넣지 않습니다</strong> — 나레이션에
+공간감을 주면 말이 뭉개지고 오히려 인공적으로 들립니다.</p>
+<p>높이를 내릴 때는 음정만 따로 변조하지 않습니다. 그 방식은 파형을 다시 짜맞춰
+기계음이 생깁니다. 대신 <strong>테이프를 늦게 돌리듯 통째로 늦춰</strong> 자연히
+낮아지게 한 뒤 속도만 되돌립니다.</p>
 <div class="tw"><table>
 <thead><tr><th>narration_tone</th><th>결과</th></tr></thead>
 <tbody>
 <tr><td><code>off</code></td><td>손대지 않습니다</td></tr>
-<tr><td><code>warm</code></td><td>조금 도톰해집니다</td></tr>
-<tr><td><code>epic</code></td><td>무게가 실립니다</td></tr>
-<tr><td><code>deep</code></td><td>소리 높이를 내려 체구가 큰 사람처럼. <b>기본값</b></td></tr>
-<tr><td><code>myth</code></td><td>가장 깊고 넓습니다. 배음을 더해 얇음을 메웁니다</td></tr>
+<tr><td><code>clean</code></td><td>높이는 그대로, 치찰음과 금속성만 정리</td></tr>
+<tr><td><code>low</code></td><td>높이를 13% 내립니다 (132Hz → 115Hz). <b>기본값</b></td></tr>
+<tr><td><code>lower</code></td><td>20% 내립니다 (→ 105Hz). 발음이 뭉개질 수 있습니다</td></tr>
 </tbody></table></div>
 <p>Actions의 <b>목소리 들어보기</b>를 돌리면 지금 목소리로 세 가지를 다 만들어
 줍니다. 들어보고 고르세요.</p>
@@ -421,8 +424,8 @@ Artifacts가 없습니다. 그 화면의 <b>목록에서 방금 돌린 실행을
 <tr><td><code>fps</code></td><td class="num">30</td><td>초당 프레임</td></tr>
 <tr><td><code>tts_voice</code></td><td class="num">InJoon</td><td>목소리</td></tr>
 <tr><td><code>tts_rate</code></td><td class="num">-5%</td><td>말 속도. 음수가 느림</td></tr>
-<tr><td><code>tts_pitch</code></td><td class="num">+0Hz</td><td>음높이. 낮추는 일은 <code>narration_tone</code> 에 맡기는 편이 자연스럽습니다</td></tr>
-<tr><td><code>narration_tone</code></td><td class="num">deep</td><td>목소리 음색. 아래 표 참고</td></tr>
+<tr><td><code>tts_pitch</code></td><td class="num">+0Hz</td><td>음높이. 낮추는 일은 <code>narration_tone</code> 에 맡깁니다</td></tr>
+<tr><td><code>narration_tone</code></td><td class="num">low</td><td>목소리 음색. 아래 표 참고</td></tr>
 <tr><td><code>watermark.remove</code></td><td class="num">true</td><td>그림에 박힌 워터마크를 지웁니다</td></tr>
 <tr><td><code>image_fit</code></td><td class="num">auto</td><td>비율이 조금 다르면 잘라 채우고, 많이 다르면 여백을 넣습니다</td></tr>
 <tr><td><code>cut_padding_sec</code></td><td class="num">0.4</td><td>말이 끝난 뒤 여백</td></tr>
