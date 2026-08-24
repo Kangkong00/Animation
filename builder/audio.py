@@ -45,6 +45,22 @@ NARRATION_TONE = {
     "lower": _drop(0.795),                  # 132Hz → 105Hz
 }
 
+AUDIO_RATE = 48000
+AUDIO_CH = 2
+BGM_EXTS = (".mp3", ".m4a", ".wav", ".ogg", ".flac", ".aac")
+
+# 더킹 세기. 괄호 안은 이 대본으로 실측한, 말할 때 배경음악이 눌리는 양이다.
+# 배경음악은 이미 15% 로 깔리므로 너무 세게 누르면 아예 안 들린다.
+DUCK_LEVELS = {
+    "light":  "threshold=0.05:ratio=3:attack=20:release=250:makeup=1",   # 약 4dB
+    "medium": "threshold=0.03:ratio=4:attack=20:release=300:makeup=1",   # 약 8dB
+    "strong": "threshold=0.02:ratio=6:attack=20:release=400:makeup=1",   # 약 12dB
+}
+
+
+def find_bgm(assets_dir: Path, named: str | None = None) -> Path | None:
+    """대본에 지정한 파일, 없으면 input 폴더의 bgm.* 를 쓴다."""
+
 
 def find_bgm(assets_dir: Path, named: str | None = None) -> Path | None:
     """대본에 지정한 파일, 없으면 input 폴더의 bgm.* 를 쓴다."""

@@ -429,6 +429,15 @@ def inspect(paths: Paths) -> dict:
                          if len(nums) > 2 else
                          f"컷 {', '.join(map(str, nums))} {note}")
 
+    # 조립할 때 실제로 지나가는 길을 점검 단계에서 미리 밟아 본다.
+    # 여기서 안 밟으면 10분짜리 조립을 다 돌린 뒤에야 문제가 드러난다.
+    audio_mod.NARRATION_TONE[cfg.narration_tone]
+    audio_mod.DUCK_LEVELS[cfg.bgm_duck]
+    bgm = audio_mod.find_bgm(paths.assets, scr.bgm)
+    for cut in scr.cuts:
+        if cut.sfx:
+            audio_mod.find_sfx(paths.assets, cut.sfx, cut.n)
+
     reworded = [c.n for c in scr.cuts if c.subtitle.strip() != c.narration.strip()]
     if reworded:
         nums = ", ".join(str(n) for n in reworded[:8])
@@ -439,7 +448,8 @@ def inspect(paths: Paths) -> dict:
             "        그대로 쓰려면 대본에서 subtitle 을 빼세요."
         )
 
-    return {"script": scr, "warnings": warns, "naming": cfg.image_naming}
+    return {"script": scr, "warnings": warns, "naming": cfg.image_naming,
+            "bgm": bgm}
 
 
 def clean(paths: Paths) -> None:

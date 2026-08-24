@@ -134,6 +134,7 @@ def main() -> int:
             for cut in scr.cuts:
                 print(f"    컷 {cut.n:>2}  ←  {cut.image.name}")
 
+        print(f"  배경음악  {info['bgm'].name if info['bgm'] else '없음'}")
         print(f"  이상 없음 — {len(scr.cuts)}컷, "
               f"나레이션 {scr.total_narration_chars}자\n")
         if args.check:
