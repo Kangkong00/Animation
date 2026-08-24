@@ -26,6 +26,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -108,6 +110,30 @@ jobs:
           name: 쇼츠
           path: deliver/*쇼츠.mp4
           retention-days: 30
+
+      - name: 완성본을 받기 쉬운 곳에 올리기
+        if: ${{ !inputs.check_only }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Actions 실행 목록을 뒤지지 않아도 되도록, 완성본만 따로 모아 둔다.
+          # releases/latest 는 주소가 바뀌지 않아서 즐겨찾기 해 두면 된다.
+          TAG="v${{ github.run_number }}"
+          NOTE=$(cat <<EOF
+          ## ${{ steps.name.outputs.title }}
+
+          | | |
+          |---|---|
+          | 길이 | $(ffprobe -v error -show_entries format=duration -of csv=p=0 output/final.mp4 | cut -d. -f1) 초 |
+          | 컷 | $(ls output/clips/*.mp4 | wc -l) 개 |
+          | 만든 때 | $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M') |
+
+          아래 **Assets** 에서 mp4 를 바로 누르면 받아집니다. 압축 안 되어 있습니다.
+          EOF
+          )
+          gh release create "$TAG" deliver/*.mp4 \
+            --title "${{ steps.name.outputs.title }}" \
+            --notes "$NOTE" --latest
 
       - name: 어떤 폰트로 자막을 그렸는지 확인
         if: ${{ !inputs.check_only }}
