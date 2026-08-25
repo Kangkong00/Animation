@@ -2,3 +2,6 @@ output/
 work/
 __pycache__/
 *.pyc
+
+# 캡컷 드래프트 생성기가 만든 프로젝트 폴더 (캡컷으로 옮겨 쓰는 임시 산출물)
+capcut_out/드래프트/
