@@ -1,0 +1,12 @@
+{
+  "chars_per_second": 5.5,
+  "tail_padding": 0.5,
+  "zoom_scale": 1.08,
+  "ending_card_seconds": 5.0,
+  "pan_percent": 4.0,
+  "ending_card_text_seconds": 4.7,
+  "subtitle_bottom_percent": 13.0,
+  "width": 1920,
+  "height": 1080,
+  "fps": 30
+}
