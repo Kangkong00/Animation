@@ -419,9 +419,25 @@ def build_draft(script, rows, image_paths, cfg, draft_root, draft_name, allow_re
 
     folder = DraftFolder(draft_root)
     if folder.has_draft(draft_name) and not allow_replace:
-        die("같은 이름의 프로젝트가 이미 있습니다: %s\n"
-            "       덮어쓰려면 --replace 를 붙이거나 --name 을 바꾸세요."
-            % os.path.join(draft_root, draft_name))
+        # chars_per_second 를 고쳐 다시 돌리는 건 예정된 작업이라, 여기서 그냥 막으면
+        # 더블클릭으로 쓰는 사람은 빠져나갈 방법이 없다. 그래서 물어본다.
+        # 다만 캡컷에서 이미 목소리나 BGM 을 넣었다면 그게 날아가므로 기본값은 '아니오'.
+        print("")
+        print("  같은 이름의 프로젝트가 이미 있습니다:")
+        print("    %s" % os.path.join(draft_root, draft_name))
+        print("")
+        print("  덮어쓰면 그 프로젝트에 넣어 둔 목소리·자막 스타일·BGM 이 전부 사라집니다.")
+        print("  아직 캡컷에서 손대지 않았다면 덮어써도 괜찮습니다.")
+        if not sys.stdin.isatty():
+            die("덮어쓸지 물어봐야 하는데 입력을 받을 수 없습니다.\n"
+                "       덮어쓰려면 --replace 를 붙이거나 --name 을 바꾸세요.")
+        try:
+            answer = input("\n  덮어쓸까요? 덮어쓰려면 y 를 누르세요 [y/N]: ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            die("취소되었습니다.")
+        if answer not in ("y", "yes"):
+            die("덮어쓰지 않고 중단합니다. 다른 이름으로 만들려면 --name 을 쓰세요.")
+        print("")
 
     # 최신 캡컷은 기존 draft_content.json 이 암호화되어 있어 템플릿으로 읽어올 수 없다.
     # 그래서 항상 '새 드래프트 생성'만 쓴다. 기존 프로젝트는 건드리지 않는다.
