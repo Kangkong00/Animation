@@ -1,0 +1,12 @@
+# 윈도우 배치 파일은 반드시 CRLF 줄바꿈이어야 한다.
+# LF 로 저장되면 cmd 가 goto/label 을 잘못 읽어
+# "내부 또는 외부 명령, 실행할 수 있는 프로그램, 또는 배치 파일이 아닙니다" 가 뜬다.
+#
+# text 대신 -text 를 쓰는 이유: 깃허브 ZIP 내려받기(git archive)는 eol 설정을
+# 적용하지 않는다. 파일 바이트를 손대지 말라고 해야 CRLF 가 그대로 살아서 나간다.
+*.bat -text
+*.cmd -text
+
+# 맥/리눅스 스크립트는 LF 여야 한다.
+*.command text eol=lf
+*.sh text eol=lf
